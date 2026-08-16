@@ -1,0 +1,25 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "dev-local",
+      "inherits": "dev",
+      "description": "Example user preset: copy to CMakeUserPresets.json and adjust.",
+      "cacheVariables": {
+        "QUILL_USE_STD_FORMAT": "ON",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "dev-local", "configurePreset": "dev-local" }
+  ],
+  "testPresets": [
+    { "name": "dev-local", "configurePreset": "dev-local", "output": { "outputOnFailure": true } }
+  ]
+}

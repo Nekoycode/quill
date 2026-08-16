@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build-test:
+    name: ${{ matrix.os }} / ${{ matrix.cxx }} / ${{ matrix.build_type }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, cc: gcc,   cxx: g++,     build_type: Debug }
+          - { os: ubuntu-latest, cc: gcc,   cxx: g++,     build_type: Release }
+          - { os: ubuntu-latest, cc: clang, cxx: clang++, build_type: Release }
+          - { os: macos-latest,  cc: clang, cxx: clang++, build_type: Release }
+          - { os: windows-latest, cc: cl,   cxx: cl,     build_type: Debug }
+          - { os: windows-latest, cc: cl,   cxx: cl,     build_type: Release }
+
+    env:
+      BUILD_TYPE: ${{ matrix.build_type }}
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang (Ubuntu)
+        if: runner.os == 'Linux' && matrix.cxx == 'clang++'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang
+
+      - name: Set up MSVC environment (Windows + Ninja)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure
+        run: cmake --preset ci
+
+      - name: Build
+        run: cmake --build --preset ci
+
+      - name: Test
+        run: ctest --preset ci
+
+  fmt-fallback:
+    name: fmt fallback / ${{ matrix.build_type }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Debug, Release]
+    env:
+      BUILD_TYPE: ${{ matrix.build_type }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake --preset ci -DQUILL_USE_STD_FORMAT=OFF
+
+      - name: Build
+        run: cmake --build --preset ci
+
+      - name: Test
+        run: ctest --preset ci
+
+  sanitize:
+    name: sanitize / ${{ matrix.preset }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [asan, tsan]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }}
+
+      - name: Build
+        run: cmake --build --preset ${{ matrix.preset }}
+
+      - name: Test
+        run: ctest --preset ${{ matrix.preset }}

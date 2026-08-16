@@ -1,0 +1,32 @@
+# Build directories
+/build/
+/build-*/
+/out/
+/cmake-build-*/
+
+# CMake user presets (machine-specific)
+CMakeUserPresets.json
+
+# Compiler database
+compile_commands.json
+
+# mcpp (secondary build tool, to be added later)
+/target/
+/.mcpp/
+
+# Editors / IDEs
+.vscode/
+.idea/
+.cache/
+.DS_Store
+
+# Python (tooling helpers)
+__pycache__/
+*.pyc
+
+# Runtime artifacts (examples, benchmarks)
+*.log
+
+# Packaging
+*.tar.gz
+*.zip

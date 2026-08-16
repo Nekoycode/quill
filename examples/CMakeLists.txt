@@ -1,0 +1,5 @@
+foreach(example IN ITEMS basic async custom_sink)
+  add_executable(quill_${example} ${example}.cpp)
+  target_link_libraries(quill_${example} PRIVATE quill::quill)
+  quill_set_warnings(quill_${example})
+endforeach()
