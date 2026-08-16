@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdio>
 #include <ctime>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -18,7 +19,9 @@ public:
   daily_file_sink(std::string base_filename, int rotation_hour = 0, int rotation_minute = 0)
       : base_filename_(std::move(base_filename)), rotation_hour_(rotation_hour),
         rotation_minute_(rotation_minute) {
-    open_for(today());
+    if (!open_for(today())) {
+      throw std::runtime_error("quill: failed to open log file: " + base_filename_);
+    }
   }
 
   ~daily_file_sink() override {
@@ -43,13 +46,11 @@ protected:
     }
     const std::string date = today();
     if (date != current_date_) {
-      std::fclose(file_);
-      file_ = nullptr;
+      // On failure the old file stays open and the old date is kept, so the
+      // rollover is retried on the next write instead of being lost forever.
       open_for(date);
     }
-    if (file_ != nullptr) {
-      std::fwrite(line.data(), 1, line.size(), file_);
-    }
+    std::fwrite(line.data(), 1, line.size(), file_);
   }
 
 private:
@@ -70,10 +71,19 @@ private:
     return buf;
   }
 
-  void open_for(const std::string& date) {
-    current_date_ = date;
+  // Opens the file for `date`, replacing the current one only on success.
+  bool open_for(const std::string& date) {
     const std::string name = base_filename_ + "_" + date;
-    file_ = std::fopen(name.c_str(), "ab");
+    std::FILE* f = std::fopen(name.c_str(), "ab");
+    if (f == nullptr) {
+      return false;
+    }
+    if (file_ != nullptr) {
+      std::fclose(file_);
+    }
+    file_ = f;
+    current_date_ = date;
+    return true;
   }
 
   std::string base_filename_;

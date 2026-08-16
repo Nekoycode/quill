@@ -9,7 +9,8 @@ add_executable(
   test_async.cpp
   test_sinks.cpp
   test_backtrace.cpp
-  test_concurrency.cpp)
+  test_concurrency.cpp
+  test_detail.cpp)
 
 target_link_libraries(quill_tests PRIVATE quill::quill doctest)
 quill_set_warnings(quill_tests)

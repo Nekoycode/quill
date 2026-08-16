@@ -120,14 +120,20 @@ public:
       std::unique_lock<std::mutex> lock(mutex_);
       not_full_.wait(lock, [this] { return !queue_.full(); });
     }
-    not_empty_.notify_one();
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      not_empty_.notify_one();
+    }
   }
 
   // Returns false when stop was requested and the queue is empty.
   bool dequeue(T& out, const std::stop_token& st) {
     for (;;) {
       if (queue_.try_dequeue(out)) {
-        not_full_.notify_one();
+        {
+          std::lock_guard<std::mutex> lock(mutex_);
+          not_full_.notify_one();
+        }
         return true;
       }
       std::unique_lock<std::mutex> lock(mutex_);
@@ -140,13 +146,17 @@ public:
 
   bool try_dequeue(T& out) {
     if (queue_.try_dequeue(out)) {
+      std::lock_guard<std::mutex> lock(mutex_);
       not_full_.notify_one();
       return true;
     }
     return false;
   }
 
-  void notify_all() { not_empty_.notify_all(); }
+  void notify_all() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    not_empty_.notify_all();
+  }
 
   bool empty() const noexcept { return queue_.empty(); }
 

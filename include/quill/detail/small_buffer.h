@@ -14,7 +14,7 @@ namespace quill::detail {
 template <std::size_t N> class small_buffer {
 public:
   void push_back(char c) {
-    if (size_ < N) {
+    if (!heap_ && size_ < N) {
       inline_[size_++] = c;
     } else {
       overflow().push_back(c);
@@ -38,7 +38,7 @@ public:
 
 private:
   small_buffer& append_impl(const char* s, std::size_t n) {
-    if (size_ + n <= N) {
+    if (!heap_ && size_ + n <= N) {
       std::memcpy(inline_ + size_, s, n);
       size_ += n;
     } else {

@@ -93,9 +93,12 @@ private:
     }
   }
 
+  // Member order matters: `backend_threads_` must be declared LAST so that on
+  // destruction it is joined FIRST (reverse order), while `pending_` and
+  // `queue_` are still alive for the backend threads to use during the drain.
+  std::atomic<std::size_t> pending_{0};
   detail::blocking_queue<async_msg> queue_;
   std::vector<std::jthread> backend_threads_;
-  std::atomic<std::size_t> pending_{0};
 };
 
 } // namespace quill

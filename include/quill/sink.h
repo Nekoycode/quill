@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -33,16 +34,23 @@ public:
   // Entry point. `msg.payload` holds the pre-formatted message text (`%v`).
   virtual void write(const log_msg& msg) {
     quill::format_buffer line;
-    formatter_->format(msg, line);
+    {
+      // Hold the mutex while reading/using formatter_, which set_formatter/
+      // set_pattern/set_color mutate under the same lock.
+      std::lock_guard<std::mutex> lock(mutex_);
+      formatter_->format(msg, line);
+    }
     line.push_back('\n');
     write_output(line.view());
   }
 
   virtual void flush() = 0;
 
-  void set_level(quill::level lvl) noexcept { level_ = lvl; }
-  quill::level level() const noexcept { return level_; }
-  bool should_log(quill::level lvl) const noexcept { return lvl >= level_; }
+  void set_level(quill::level lvl) noexcept { level_.store(lvl, std::memory_order_relaxed); }
+  quill::level level() const noexcept { return level_.load(std::memory_order_relaxed); }
+  bool should_log(quill::level lvl) const noexcept {
+    return lvl >= level_.load(std::memory_order_relaxed);
+  }
 
   void set_formatter(std::unique_ptr<quill::formatter> f) {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -75,7 +83,7 @@ protected:
 
   mutable std::mutex mutex_;
   std::unique_ptr<quill::formatter> formatter_;
-  quill::level level_{quill::level::trace};
+  std::atomic<quill::level> level_{quill::level::trace};
   bool color_enabled_{false};
 };
 

@@ -43,6 +43,8 @@ public:
         destroy_ = other.destroy_;
         move_ = other.move_;
         other.reset();
+      } else {
+        reset();
       }
     }
     return *this;

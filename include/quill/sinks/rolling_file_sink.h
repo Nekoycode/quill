@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdio>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -10,12 +11,21 @@ namespace quill::sinks {
 
 // Size-based rolling (a.k.a. "rolling log"): when the current file would exceed
 // `max_size`, it is renamed to `<filename>.1`, shifting older backups up to
-// `<filename>.<N>`. At most `max_files` rotated files are kept.
+// `<filename>.<N>`. At most `max_files` rotated files are kept. If `max_files`
+// is 0, the file is simply truncated on rollover.
 class rolling_file_sink final : public sink {
 public:
   rolling_file_sink(std::string base_filename, std::size_t max_size, std::size_t max_files)
       : base_filename_(std::move(base_filename)), max_size_(max_size), max_files_(max_files) {
     file_ = std::fopen(base_filename_.c_str(), "ab");
+    if (file_ == nullptr) {
+      throw std::runtime_error("quill: failed to open log file: " + base_filename_);
+    }
+    // Account for any pre-existing content so the first rotation is accurate.
+    if (std::fseek(file_, 0, SEEK_END) == 0) {
+      const long pos = std::ftell(file_);
+      current_size_ = (pos >= 0) ? static_cast<std::size_t>(pos) : 0;
+    }
   }
 
   ~rolling_file_sink() override {
@@ -64,9 +74,12 @@ private:
         std::rename(src.c_str(), dst.c_str());
       }
       std::rename(base_filename_.c_str(), (base_filename_ + ".1").c_str());
+      file_ = std::fopen(base_filename_.c_str(), "ab");
+    } else {
+      // No backups kept: truncate.
+      file_ = std::fopen(base_filename_.c_str(), "wb");
     }
 
-    file_ = std::fopen(base_filename_.c_str(), "ab");
     current_size_ = 0;
   }
 
