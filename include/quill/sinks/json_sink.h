@@ -21,8 +21,7 @@ namespace quill::sinks {
 // directly and ignores the pattern formatter.
 class json_sink final : public sink {
 public:
-  explicit json_sink(std::string filename, bool truncate = true)
-      : filename_(std::move(filename)) {
+  explicit json_sink(std::string filename, bool truncate = true) : filename_(std::move(filename)) {
     file_ = std::fopen(filename_.c_str(), truncate ? "wb" : "ab");
     if (file_ == nullptr) {
       throw std::runtime_error("quill: failed to open log file: " + filename_);
@@ -86,29 +85,37 @@ private:
   static std::string format_time(const log_msg& msg) {
     const detail::tm_fields tf = detail::to_local_time(msg.time);
     char buf[80];
-    std::snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02d.%03d",
-                  tf.year, tf.month, tf.day, tf.hour, tf.minute, tf.second,
-                  tf.millisecond);
+    std::snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02d.%03d", tf.year, tf.month, tf.day,
+                  tf.hour, tf.minute, tf.second, tf.millisecond);
     return buf;
   }
 
   static void append_json_escaped(std::string& out, std::string_view s) {
     for (const char c : s) {
       switch (c) {
-        case '"': out += "\\\""; break;
-        case '\\': out += "\\\\"; break;
-        case '\n': out += "\\n"; break;
-        case '\r': out += "\\r"; break;
-        case '\t': out += "\\t"; break;
-        default:
-          if (static_cast<unsigned char>(c) < 0x20) {
-            char buf[8];
-            std::snprintf(buf, sizeof(buf), "\\u%04x",
-                          static_cast<unsigned char>(c));
-            out += buf;
-          } else {
-            out.push_back(c);
-          }
+      case '"':
+        out += "\\\"";
+        break;
+      case '\\':
+        out += "\\\\";
+        break;
+      case '\n':
+        out += "\\n";
+        break;
+      case '\r':
+        out += "\\r";
+        break;
+      case '\t':
+        out += "\\t";
+        break;
+      default:
+        if (static_cast<unsigned char>(c) < 0x20) {
+          char buf[8];
+          std::snprintf(buf, sizeof(buf), "\\u%04x", static_cast<unsigned char>(c));
+          out += buf;
+        } else {
+          out.push_back(c);
+        }
       }
     }
   }

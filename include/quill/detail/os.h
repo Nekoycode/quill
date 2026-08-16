@@ -10,11 +10,11 @@
 #include <quill/level.h>
 
 #ifdef _WIN32
-  #include <io.h>
-  #include <process.h>
-  #include <windows.h>
+#include <io.h>
+#include <process.h>
+#include <windows.h>
 #else
-  #include <unistd.h>
+#include <unistd.h>
 #endif
 
 namespace quill::detail {
@@ -105,13 +105,20 @@ inline void append_uint(std::string& out, std::uint64_t value) {
 
 inline const char* level_color(level lvl) {
   switch (lvl) {
-    case level::trace: return "\033[37m";
-    case level::debug: return "\033[36m";
-    case level::info: return "\033[32m";
-    case level::warn: return "\033[33m";
-    case level::error: return "\033[31m";
-    case level::critical: return "\033[1;31m";
-    default: return "\033[0m";
+  case level::trace:
+    return "\033[37m";
+  case level::debug:
+    return "\033[36m";
+  case level::info:
+    return "\033[32m";
+  case level::warn:
+    return "\033[33m";
+  case level::error:
+    return "\033[31m";
+  case level::critical:
+    return "\033[1;31m";
+  default:
+    return "\033[0m";
   }
 }
 

@@ -11,17 +11,15 @@
 
 int main(int argc, char** argv) {
   const std::size_t iters =
-      (argc > 1) ? static_cast<std::size_t>(std::strtoull(argv[1], nullptr, 10))
-                 : 1'000'000;
+      (argc > 1) ? static_cast<std::size_t>(std::strtoull(argv[1], nullptr, 10)) : 1'000'000;
   std::printf("iterations per benchmark: %zu\n\n", iters);
 
   // 1) Synchronous logger -> null sink (formatting + dispatch, no I/O).
   {
     auto lg = quill::create_logger("sync", quill::null_sink());
     lg->set_pattern("%v");
-    const double ns = quill::bench::time_per_op(iters, [&] {
-      lg->info("benchmark message {}", 42);
-    });
+    const double ns =
+        quill::bench::time_per_op(iters, [&] { lg->info("benchmark message {}", 42); });
     quill::bench::report("sync logger -> null sink", ns);
   }
 
@@ -29,9 +27,8 @@ int main(int argc, char** argv) {
   {
     auto lg = quill::create_logger("filtered", quill::null_sink());
     lg->set_level(quill::level::off);
-    const double ns = quill::bench::time_per_op(iters, [&] {
-      lg->info("benchmark message {}", 42);
-    });
+    const double ns =
+        quill::bench::time_per_op(iters, [&] { lg->info("benchmark message {}", 42); });
     quill::bench::report("sync logger (filtered, level=off)", ns);
   }
 
@@ -39,9 +36,8 @@ int main(int argc, char** argv) {
   {
     auto lg = quill::create_async_logger("async", 8192, quill::null_sink());
     lg->set_pattern("%v");
-    const double ns = quill::bench::time_per_op(iters, [&] {
-      lg->info("benchmark message {}", 42);
-    });
+    const double ns =
+        quill::bench::time_per_op(iters, [&] { lg->info("benchmark message {}", 42); });
     lg->flush();
     quill::bench::report("async logger -> null sink (1 thread)", ns);
   }
@@ -68,10 +64,8 @@ int main(int argc, char** argv) {
     lg->flush();
     const auto end = std::chrono::steady_clock::now();
 
-    const double total_ns =
-        std::chrono::duration<double, std::nano>(end - start).count();
-    const double ns_per_op =
-        total_ns / static_cast<double>(per_thread * n_threads);
+    const double total_ns = std::chrono::duration<double, std::nano>(end - start).count();
+    const double ns_per_op = total_ns / static_cast<double>(per_thread * n_threads);
     quill::bench::report("async logger -> null sink (4 threads)", ns_per_op);
   }
 

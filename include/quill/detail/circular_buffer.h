@@ -10,8 +10,7 @@
 namespace quill::detail {
 
 // Fixed-capacity ring buffer that overwrites the oldest entry when full.
-template <typename T>
-class circular_buffer {
+template <typename T> class circular_buffer {
 public:
   explicit circular_buffer(std::size_t capacity) : buf_(capacity), capacity_(capacity) {}
 

@@ -34,8 +34,7 @@ public:
   explicit logger(std::string name, std::vector<std::shared_ptr<sinks::sink>> sinks)
       : name_(std::move(name)), sinks_(std::move(sinks)) {}
 
-  explicit logger(std::string name, std::shared_ptr<sinks::sink> s)
-      : name_(std::move(name)) {
+  explicit logger(std::string name, std::shared_ptr<sinks::sink> s) : name_(std::move(name)) {
     sinks_.push_back(std::move(s));
   }
 
@@ -47,48 +46,40 @@ public:
   // -- Core logging --------------------------------------------------------
 
   template <typename... Args>
-  void log(source_loc loc, quill::level lvl, detail::format_string_t<Args...> fmt,
-           Args&&... args) {
+  void log(source_loc loc, quill::level lvl, detail::format_string_t<Args...> fmt, Args&&... args) {
     log_formatted(lvl, detail::format(fmt, std::forward<Args>(args)...), loc);
   }
 
   template <typename... Args>
   void log_runtime(quill::level lvl, std::string_view fmt, Args&&... args) {
-    log_formatted(lvl, detail::vformat(fmt, detail::make_format_args(args...)),
-                  source_loc{});
+    log_formatted(lvl, detail::vformat(fmt, detail::make_format_args(args...)), source_loc{});
   }
 
   void log_raw(quill::level lvl, std::string_view message) {
     log_formatted(lvl, std::string(message), source_loc{});
   }
 
-  template <typename... Args>
-  void trace(detail::format_string_t<Args...> fmt, Args&&... args) {
+  template <typename... Args> void trace(detail::format_string_t<Args...> fmt, Args&&... args) {
     log(source_loc{}, quill::level::trace, fmt, std::forward<Args>(args)...);
   }
 
-  template <typename... Args>
-  void debug(detail::format_string_t<Args...> fmt, Args&&... args) {
+  template <typename... Args> void debug(detail::format_string_t<Args...> fmt, Args&&... args) {
     log(source_loc{}, quill::level::debug, fmt, std::forward<Args>(args)...);
   }
 
-  template <typename... Args>
-  void info(detail::format_string_t<Args...> fmt, Args&&... args) {
+  template <typename... Args> void info(detail::format_string_t<Args...> fmt, Args&&... args) {
     log(source_loc{}, quill::level::info, fmt, std::forward<Args>(args)...);
   }
 
-  template <typename... Args>
-  void warn(detail::format_string_t<Args...> fmt, Args&&... args) {
+  template <typename... Args> void warn(detail::format_string_t<Args...> fmt, Args&&... args) {
     log(source_loc{}, quill::level::warn, fmt, std::forward<Args>(args)...);
   }
 
-  template <typename... Args>
-  void error(detail::format_string_t<Args...> fmt, Args&&... args) {
+  template <typename... Args> void error(detail::format_string_t<Args...> fmt, Args&&... args) {
     log(source_loc{}, quill::level::error, fmt, std::forward<Args>(args)...);
   }
 
-  template <typename... Args>
-  void critical(detail::format_string_t<Args...> fmt, Args&&... args) {
+  template <typename... Args> void critical(detail::format_string_t<Args...> fmt, Args&&... args) {
     log(source_loc{}, quill::level::critical, fmt, std::forward<Args>(args)...);
   }
 
@@ -98,17 +89,11 @@ public:
     return lvl >= level_.load(std::memory_order_relaxed);
   }
 
-  void set_level(quill::level lvl) noexcept {
-    level_.store(lvl, std::memory_order_relaxed);
-  }
+  void set_level(quill::level lvl) noexcept { level_.store(lvl, std::memory_order_relaxed); }
   quill::level level() const noexcept { return level_.load(std::memory_order_relaxed); }
 
-  void flush_on(quill::level lvl) noexcept {
-    flush_level_.store(lvl, std::memory_order_relaxed);
-  }
-  quill::level flush_level() const noexcept {
-    return flush_level_.load(std::memory_order_relaxed);
-  }
+  void flush_on(quill::level lvl) noexcept { flush_level_.store(lvl, std::memory_order_relaxed); }
+  quill::level flush_level() const noexcept { return flush_level_.load(std::memory_order_relaxed); }
 
   void set_pattern(std::string pattern) {
     for (auto& s : sinks_) {
@@ -161,9 +146,7 @@ public:
 
   const std::string& name() const noexcept { return name_; }
 
-  const std::vector<std::shared_ptr<sinks::sink>>& sinks() const noexcept {
-    return sinks_;
-  }
+  const std::vector<std::shared_ptr<sinks::sink>>& sinks() const noexcept { return sinks_; }
   std::vector<std::shared_ptr<sinks::sink>>& sinks() noexcept { return sinks_; }
 
 protected:

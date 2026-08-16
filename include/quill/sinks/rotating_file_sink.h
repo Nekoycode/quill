@@ -12,11 +12,8 @@ namespace quill::sinks {
 // renamed to `<filename>.1`, shifting older backups up to `<filename>.<N>`.
 class rotating_file_sink final : public sink {
 public:
-  rotating_file_sink(std::string base_filename, std::size_t max_size,
-                     std::size_t max_files)
-      : base_filename_(std::move(base_filename)),
-        max_size_(max_size),
-        max_files_(max_files) {
+  rotating_file_sink(std::string base_filename, std::size_t max_size, std::size_t max_files)
+      : base_filename_(std::move(base_filename)), max_size_(max_size), max_files_(max_files) {
     file_ = std::fopen(base_filename_.c_str(), "ab");
   }
 

@@ -14,7 +14,7 @@
 // Formatting backend selection
 // ---------------------------------------------------------------------------
 #if !defined(QUILL_USE_STD_FORMAT)
-  #define QUILL_USE_STD_FORMAT 1
+#define QUILL_USE_STD_FORMAT 1
 #endif
 
 // ---------------------------------------------------------------------------
@@ -25,17 +25,17 @@
 // model, which is reserved for a future compiled build mode.
 // ---------------------------------------------------------------------------
 #if defined(QUILL_COMPILED_LIB)
-  #if defined(_WIN32) && defined(QUILL_SHARED_LIB)
-    #ifdef QUILL_BUILDING_LIBRARY
-      #define QUILL_API __declspec(dllexport)
-    #else
-      #define QUILL_API __declspec(dllimport)
-    #endif
-  #else
-    #define QUILL_API
-  #endif
+#if defined(_WIN32) && defined(QUILL_SHARED_LIB)
+#ifdef QUILL_BUILDING_LIBRARY
+#define QUILL_API __declspec(dllexport)
 #else
-  #define QUILL_API inline
+#define QUILL_API __declspec(dllimport)
+#endif
+#else
+#define QUILL_API
+#endif
+#else
+#define QUILL_API inline
 #endif
 
 #define QUILL_INLINE inline

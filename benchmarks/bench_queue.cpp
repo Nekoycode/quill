@@ -12,8 +12,7 @@
 
 int main(int argc, char** argv) {
   const std::size_t iters =
-      (argc > 1) ? static_cast<std::size_t>(std::strtoull(argv[1], nullptr, 10))
-                 : 1'000'000;
+      (argc > 1) ? static_cast<std::size_t>(std::strtoull(argv[1], nullptr, 10)) : 1'000'000;
   std::printf("iterations per benchmark: %zu\n\n", iters);
 
   // 1) SPSC round-trip: one enqueue + one dequeue per iteration.
@@ -67,11 +66,9 @@ int main(int argc, char** argv) {
     consumer.join();
     const auto end = std::chrono::steady_clock::now();
 
-    const double total_ns =
-        std::chrono::duration<double, std::nano>(end - start).count();
+    const double total_ns = std::chrono::duration<double, std::nano>(end - start).count();
     const double ns_per_op = total_ns / static_cast<double>(per * producers);
-    std::printf("consumed: %llu / %zu\n",
-                static_cast<unsigned long long>(consumed.load()),
+    std::printf("consumed: %llu / %zu\n", static_cast<unsigned long long>(consumed.load()),
                 per * producers);
     quill::bench::report("mpmc queue (4 producers + 1 consumer)", ns_per_op);
   }

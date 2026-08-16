@@ -14,8 +14,7 @@ namespace quill::detail {
 // Bounded lock-free MPMC queue (Dmitry Vyukov's algorithm). Capacity is
 // rounded up to a power of two. Only `try_*` operations are provided here;
 // blocking backpressure lives in `blocking_queue`.
-template <typename T>
-class mpmc_bounded_queue {
+template <typename T> class mpmc_bounded_queue {
 public:
   explicit mpmc_bounded_queue(std::size_t capacity)
       : capacity_(next_pow2(capacity)), mask_(capacity_ - 1), buffer_(capacity_) {
@@ -33,11 +32,9 @@ public:
     for (;;) {
       c = &buffer_[pos & mask_];
       const std::size_t seq = c->sequence.load(std::memory_order_acquire);
-      const std::intptr_t dif =
-          static_cast<std::intptr_t>(seq) - static_cast<std::intptr_t>(pos);
+      const std::intptr_t dif = static_cast<std::intptr_t>(seq) - static_cast<std::intptr_t>(pos);
       if (dif == 0) {
-        if (enqueue_pos_.compare_exchange_weak(pos, pos + 1,
-                                               std::memory_order_relaxed)) {
+        if (enqueue_pos_.compare_exchange_weak(pos, pos + 1, std::memory_order_relaxed)) {
           break;
         }
       } else if (dif < 0) {
@@ -60,8 +57,7 @@ public:
       const std::intptr_t dif =
           static_cast<std::intptr_t>(seq) - static_cast<std::intptr_t>(pos + 1);
       if (dif == 0) {
-        if (dequeue_pos_.compare_exchange_weak(pos, pos + 1,
-                                               std::memory_order_relaxed)) {
+        if (dequeue_pos_.compare_exchange_weak(pos, pos + 1, std::memory_order_relaxed)) {
           break;
         }
       } else if (dif < 0) {
@@ -112,8 +108,7 @@ private:
 // Blocking wrapper around `mpmc_bounded_queue`: producers block with
 // backpressure when full, consumers block when empty. `dequeue` supports
 // cooperative shutdown via `std::stop_token`.
-template <typename T>
-class blocking_queue {
+template <typename T> class blocking_queue {
 public:
   explicit blocking_queue(std::size_t capacity) : queue_(capacity) {}
 
@@ -136,8 +131,7 @@ public:
         return true;
       }
       std::unique_lock<std::mutex> lock(mutex_);
-      not_empty_.wait(lock,
-                      [this, &st] { return !queue_.empty() || st.stop_requested(); });
+      not_empty_.wait(lock, [this, &st] { return !queue_.empty() || st.stop_requested(); });
       if (st.stop_requested() && queue_.empty()) {
         return false;
       }

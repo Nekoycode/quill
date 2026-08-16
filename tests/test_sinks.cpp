@@ -76,7 +76,7 @@ TEST_CASE("daily_file_sink writes to a dated file") {
   bool found = false;
   for (const auto& entry : fs::directory_iterator(td.dir())) {
     const std::string name = entry.path().filename().string();
-    if (name.rfind("daily_", 0) == 0) {
+    if (name.starts_with("daily_")) {
       found = true;
       break;
     }

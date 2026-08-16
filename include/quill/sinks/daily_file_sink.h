@@ -15,10 +15,8 @@ namespace quill::sinks {
 // opened once the (rollover-offset) date changes.
 class daily_file_sink final : public sink {
 public:
-  daily_file_sink(std::string base_filename, int rotation_hour = 0,
-                  int rotation_minute = 0)
-      : base_filename_(std::move(base_filename)),
-        rotation_hour_(rotation_hour),
+  daily_file_sink(std::string base_filename, int rotation_hour = 0, int rotation_minute = 0)
+      : base_filename_(std::move(base_filename)), rotation_hour_(rotation_hour),
         rotation_minute_(rotation_minute) {
     open_for(today());
   }
@@ -58,8 +56,7 @@ private:
   std::string today() const {
     // Shift "now" backwards by the rollover offset so that a rotation happens
     // at rotation_hour:rotation_minute instead of midnight.
-    const auto offset =
-        std::chrono::seconds(rotation_hour_ * 3600 + rotation_minute_ * 60);
+    const auto offset = std::chrono::seconds(rotation_hour_ * 3600 + rotation_minute_ * 60);
     const auto tp = std::chrono::system_clock::now() - offset;
     const std::time_t tt = std::chrono::system_clock::to_time_t(tp);
     std::tm t{};
@@ -69,8 +66,7 @@ private:
     localtime_r(&tt, &t);
 #endif
     char buf[40];
-    std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d", t.tm_year + 1900,
-                  t.tm_mon + 1, t.tm_mday);
+    std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
     return buf;
   }
 

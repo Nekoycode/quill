@@ -9,27 +9,27 @@
 #include <quill/detail/blocking_queue.h>
 
 TEST_CASE("mpmc queue preserves SPSC order") {
-  quill::detail::mpmc_bounded_queue<int> q(1024);
+  quill::detail::mpmc_bounded_queue<std::uint64_t> q(1024);
   for (int i = 0; i < 1000; ++i) {
-    REQUIRE(q.try_enqueue(std::move(i)));
+    REQUIRE(q.try_enqueue(std::uint64_t(i)));
   }
   for (int i = 0; i < 1000; ++i) {
-    int v = -1;
+    std::uint64_t v = 0;
     REQUIRE(q.try_dequeue(v));
-    CHECK(v == i);
+    CHECK(v == static_cast<std::uint64_t>(i));
   }
   CHECK(q.empty());
 }
 
 TEST_CASE("mpmc queue reports full and empty") {
-  quill::detail::mpmc_bounded_queue<int> q(4); // rounded up to power of two
+  quill::detail::mpmc_bounded_queue<std::uint64_t> q(4); // rounded up to a power of two
   CHECK(q.empty());
   for (int i = 0; i < 4; ++i) {
-    CHECK(q.try_enqueue(std::move(i)));
+    CHECK(q.try_enqueue(std::uint64_t(i)));
   }
   CHECK(q.full());
-  CHECK_FALSE(q.try_enqueue(99)); // full
-  int v = 0;
+  CHECK_FALSE(q.try_enqueue(std::uint64_t(99))); // full
+  std::uint64_t v = 0;
   CHECK(q.try_dequeue(v));
   CHECK(v == 0);
   CHECK_FALSE(q.full());
@@ -57,10 +57,11 @@ TEST_CASE("mpmc queue MPMC loses nothing and duplicates nothing") {
   });
 
   std::vector<std::thread> ts;
+  ts.reserve(producers);
   for (int p = 0; p < producers; ++p) {
     ts.emplace_back([&q, p] {
       for (int i = 0; i < per; ++i) {
-        while (!q.try_enqueue(static_cast<std::uint64_t>(p) * 1000000ULL +
+        while (!q.try_enqueue((static_cast<std::uint64_t>(p) * 1000000ULL) +
                               static_cast<std::uint64_t>(i))) {
           std::this_thread::yield();
         }
@@ -74,17 +75,17 @@ TEST_CASE("mpmc queue MPMC loses nothing and duplicates nothing") {
   consumer.join();
 
   REQUIRE(got.size() == total);
-  std::sort(got.begin(), got.end());
-  CHECK(std::adjacent_find(got.begin(), got.end()) == got.end());
+  std::ranges::sort(got);
+  CHECK(std::ranges::adjacent_find(got) == got.end());
 }
 
 TEST_CASE("blocking queue round-trips with a consumer thread") {
-  quill::detail::blocking_queue<int> q(16);
+  quill::detail::blocking_queue<std::uint64_t> q(16);
 
-  std::vector<int> got;
+  std::vector<std::uint64_t> got;
   std::thread consumer([&q, &got] {
     for (int i = 0; i < 100; ++i) {
-      int v = -1;
+      std::uint64_t v = 0;
       const std::stop_token st;
       CHECK(q.dequeue(v, st));
       got.push_back(v);
@@ -92,7 +93,7 @@ TEST_CASE("blocking queue round-trips with a consumer thread") {
   });
 
   for (int i = 0; i < 100; ++i) {
-    q.enqueue(std::move(i));
+    q.enqueue(std::uint64_t(i));
   }
 
   consumer.join();

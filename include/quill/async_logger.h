@@ -21,7 +21,7 @@ struct async_msg {
 
   kind k{kind::log};
   std::size_t sink_index{0};
-  log_msg msg;                  // used when k == log
+  log_msg msg;                       // used when k == log
   std::promise<void>* sync{nullptr}; // used when k == flush
 };
 
@@ -32,8 +32,7 @@ struct async_msg {
 // lost.
 class async_logger final : public logger {
 public:
-  explicit async_logger(std::string name,
-                        std::vector<std::shared_ptr<sinks::sink>> sinks,
+  explicit async_logger(std::string name, std::vector<std::shared_ptr<sinks::sink>> sinks,
                         std::size_t queue_size = 4096)
       : logger(std::move(name), std::move(sinks)), queue_(queue_size),
         backend_thread_([this](std::stop_token st) { backend_loop(st); }) {}

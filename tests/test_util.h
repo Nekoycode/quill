@@ -12,10 +12,8 @@ namespace quill::test {
 class temp_dir {
 public:
   temp_dir() {
-    const auto suffix =
-        std::chrono::steady_clock::now().time_since_epoch().count();
-    path_ = std::filesystem::temp_directory_path() /
-            ("quill_test_" + std::to_string(suffix));
+    const auto suffix = std::chrono::steady_clock::now().time_since_epoch().count();
+    path_ = std::filesystem::temp_directory_path() / ("quill_test_" + std::to_string(suffix));
     std::filesystem::create_directories(path_);
   }
 
@@ -26,9 +24,7 @@ public:
 
   const std::filesystem::path& dir() const noexcept { return path_; }
 
-  std::string file(const std::string& name) const {
-    return (path_ / name).string();
-  }
+  std::string file(const std::string& name) const { return (path_ / name).string(); }
 
 private:
   std::filesystem::path path_;
@@ -36,8 +32,7 @@ private:
 
 inline std::string read_file(const std::string& path) {
   std::ifstream f(path, std::ios::binary);
-  return std::string(std::istreambuf_iterator<char>(f),
-                     std::istreambuf_iterator<char>());
+  return std::string(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
 }
 
 } // namespace quill::test

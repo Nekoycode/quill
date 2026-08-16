@@ -8,9 +8,9 @@
 #include <quill/common.h>
 
 #if QUILL_USE_STD_FORMAT
-  #include <format>
+#include <format>
 #else
-  #include <fmt/format.h>
+#include <fmt/format.h>
 #endif
 
 namespace quill::detail {
@@ -28,8 +28,7 @@ inline std::string format(format_string_t<Args...> fmt, Args&&... args) {
   return std::format(fmt, std::forward<Args>(args)...);
 }
 
-template <typename... Args>
-inline auto make_format_args(Args&&... args) {
+template <typename... Args> inline auto make_format_args(Args&&... args) {
   return std::make_format_args(args...);
 }
 
@@ -39,16 +38,14 @@ inline std::string vformat(std::string_view fmt, std::format_args args) {
 
 #else
 
-template <typename... Args>
-using format_string_t = fmt::format_string<Args...>;
+template <typename... Args> using format_string_t = fmt::format_string<Args...>;
 
 template <typename... Args>
 inline std::string format(format_string_t<Args...> fmt, Args&&... args) {
   return fmt::format(fmt, std::forward<Args>(args)...);
 }
 
-template <typename... Args>
-inline auto make_format_args(Args&&... args) {
+template <typename... Args> inline auto make_format_args(Args&&... args) {
   return fmt::make_format_args(args...);
 }
 

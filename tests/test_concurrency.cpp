@@ -21,6 +21,7 @@ TEST_CASE("sync logger is safe under concurrent use") {
   constexpr int n_msgs = 2000;
 
   std::vector<std::thread> ts;
+  ts.reserve(n_threads);
   for (int t = 0; t < n_threads; ++t) {
     ts.emplace_back([&lg, t] {
       for (int i = 0; i < n_msgs; ++i) {
@@ -57,6 +58,7 @@ TEST_CASE("file sink is safe under concurrent use") {
     auto lg = quill::file_logger("f", path, true);
     lg->set_pattern("%v");
     std::vector<std::thread> ts;
+    ts.reserve(n_threads);
     for (int t = 0; t < n_threads; ++t) {
       ts.emplace_back([&lg, t] {
         for (int i = 0; i < n_msgs; ++i) {

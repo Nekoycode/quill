@@ -18,6 +18,7 @@ TEST_CASE("async logger delivers all messages from multiple threads") {
   constexpr int n_msgs = 1000;
 
   std::vector<std::thread> ts;
+  ts.reserve(n_threads);
   for (int t = 0; t < n_threads; ++t) {
     ts.emplace_back([lg, t] {
       for (int i = 0; i < n_msgs; ++i) {

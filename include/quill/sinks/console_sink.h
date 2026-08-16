@@ -14,9 +14,7 @@ public:
   enum class stream { stdout_stream, stderr_stream };
   enum class color_mode { automatic, always, never };
 
-  explicit console_sink(stream s = stream::stdout_stream) : stream_(s) {
-    refresh_color();
-  }
+  explicit console_sink(stream s = stream::stdout_stream) : stream_(s) { refresh_color(); }
 
   void flush() override {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -38,25 +36,23 @@ protected:
   }
 
 private:
-  std::FILE* file() const noexcept {
-    return stream_ == stream::stdout_stream ? stdout : stderr;
-  }
+  std::FILE* file() const noexcept { return stream_ == stream::stdout_stream ? stdout : stderr; }
 
   void refresh_color() {
     bool enabled = false;
     switch (color_mode_) {
-      case color_mode::always:
-        enabled = true;
-        break;
-      case color_mode::never:
-        enabled = false;
-        break;
-      case color_mode::automatic:
+    case color_mode::always:
+      enabled = true;
+      break;
+    case color_mode::never:
+      enabled = false;
+      break;
+    case color_mode::automatic:
 #ifdef _WIN32
-        detail::enable_windows_ansi();
+      detail::enable_windows_ansi();
 #endif
-        enabled = detail::is_tty(file());
-        break;
+      enabled = detail::is_tty(file());
+      break;
     }
     set_color(enabled);
   }

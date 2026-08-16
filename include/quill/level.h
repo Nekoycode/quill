@@ -21,26 +21,41 @@ enum class level : std::uint8_t {
 QUILL_NODISCARD constexpr std::string_view to_string_view(level lvl) noexcept {
   using namespace std::string_view_literals;
   switch (lvl) {
-    case level::trace: return "trace"sv;
-    case level::debug: return "debug"sv;
-    case level::info: return "info"sv;
-    case level::warn: return "warn"sv;
-    case level::error: return "error"sv;
-    case level::critical: return "critical"sv;
-    case level::off: return "off"sv;
-    default: return "???"sv;
+  case level::trace:
+    return "trace"sv;
+  case level::debug:
+    return "debug"sv;
+  case level::info:
+    return "info"sv;
+  case level::warn:
+    return "warn"sv;
+  case level::error:
+    return "error"sv;
+  case level::critical:
+    return "critical"sv;
+  case level::off:
+    return "off"sv;
+  default:
+    return "???"sv;
   }
 }
 
 QUILL_NODISCARD constexpr char short_level(level lvl) noexcept {
   switch (lvl) {
-    case level::trace: return 'T';
-    case level::debug: return 'D';
-    case level::info: return 'I';
-    case level::warn: return 'W';
-    case level::error: return 'E';
-    case level::critical: return 'C';
-    default: return '?';
+  case level::trace:
+    return 'T';
+  case level::debug:
+    return 'D';
+  case level::info:
+    return 'I';
+  case level::warn:
+    return 'W';
+  case level::error:
+    return 'E';
+  case level::critical:
+    return 'C';
+  default:
+    return '?';
   }
 }
 
@@ -56,7 +71,7 @@ QUILL_NODISCARD constexpr char short_level(level lvl) noexcept {
 #define QUILL_LEVEL_OFF 6
 
 #if !defined(QUILL_ACTIVE_LEVEL)
-  #define QUILL_ACTIVE_LEVEL QUILL_LEVEL_TRACE
+#define QUILL_ACTIVE_LEVEL QUILL_LEVEL_TRACE
 #endif
 
 } // namespace quill

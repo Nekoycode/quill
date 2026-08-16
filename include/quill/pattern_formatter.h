@@ -24,8 +24,7 @@ namespace quill {
 //   %^  start color          %$  end color            %%  literal '%'
 class pattern_formatter final : public formatter {
 public:
-  explicit pattern_formatter(
-      std::string pattern = "%^[%Y-%m-%d %H:%M:%S.%e] [%l] [%n] [%t] %v%$")
+  explicit pattern_formatter(std::string pattern = "%^[%Y-%m-%d %H:%M:%S.%e] [%l] [%n] [%t] %v%$")
       : pattern_(std::move(pattern)) {
     compile_pattern();
   }
@@ -34,91 +33,91 @@ public:
     const detail::tm_fields tf = detail::to_local_time(msg.time);
     for (const auto& it : items_) {
       switch (it.f) {
-        case flag::literal:
-          out += it.text;
-          break;
-        case flag::year:
-          detail::append_int(out, tf.year, 4);
-          break;
-        case flag::month:
-          detail::append_int(out, tf.month, 2);
-          break;
-        case flag::month_short_name:
-          out += detail::month_short_name(tf.month);
-          break;
-        case flag::day:
-          detail::append_int(out, tf.day, 2);
-          break;
-        case flag::weekday_short:
-          out += detail::weekday_short_name(tf.weekday);
-          break;
-        case flag::hour_24:
-          detail::append_int(out, tf.hour, 2);
-          break;
-        case flag::hour_12: {
-          int h = tf.hour % 12;
-          if (h == 0) {
-            h = 12;
-          }
-          detail::append_int(out, h, 2);
-          break;
+      case flag::literal:
+        out += it.text;
+        break;
+      case flag::year:
+        detail::append_int(out, tf.year, 4);
+        break;
+      case flag::month:
+        detail::append_int(out, tf.month, 2);
+        break;
+      case flag::month_short_name:
+        out += detail::month_short_name(tf.month);
+        break;
+      case flag::day:
+        detail::append_int(out, tf.day, 2);
+        break;
+      case flag::weekday_short:
+        out += detail::weekday_short_name(tf.weekday);
+        break;
+      case flag::hour_24:
+        detail::append_int(out, tf.hour, 2);
+        break;
+      case flag::hour_12: {
+        int h = tf.hour % 12;
+        if (h == 0) {
+          h = 12;
         }
-        case flag::minute:
-          detail::append_int(out, tf.minute, 2);
-          break;
-        case flag::second:
-          detail::append_int(out, tf.second, 2);
-          break;
-        case flag::millis:
-          detail::append_int(out, tf.millisecond, 3);
-          break;
-        case flag::micros:
-          detail::append_int(out, tf.microsecond, 6);
-          break;
-        case flag::level_short:
-          out.push_back(short_level(msg.lvl));
-          break;
-        case flag::level_full:
-          out += to_string_view(msg.lvl);
-          break;
-        case flag::logger_name:
-          out += msg.logger_name;
-          break;
-        case flag::thread_id:
-          detail::append_uint(out, msg.thread_id);
-          break;
-        case flag::process_id:
-          detail::append_int(out, detail::process_id());
-          break;
-        case flag::source_short:
-          out += basename(msg.loc.file_name());
-          out.push_back(':');
-          detail::append_int(out, static_cast<std::int64_t>(msg.loc.line()));
-          break;
-        case flag::source_file:
-          out += msg.loc.file_name();
-          break;
-        case flag::source_line:
-          detail::append_int(out, static_cast<std::int64_t>(msg.loc.line()));
-          break;
-        case flag::source_func:
-          out += msg.loc.function_name();
-          break;
-        case flag::message:
-          out += msg.payload;
-          break;
-        case flag::color_start:
-          if (color_enabled_) {
-            out += detail::level_color(msg.lvl);
-          }
-          break;
-        case flag::color_end:
-          if (color_enabled_) {
-            out += detail::color_reset();
-          }
-          break;
-        case flag::none:
-          break;
+        detail::append_int(out, h, 2);
+        break;
+      }
+      case flag::minute:
+        detail::append_int(out, tf.minute, 2);
+        break;
+      case flag::second:
+        detail::append_int(out, tf.second, 2);
+        break;
+      case flag::millis:
+        detail::append_int(out, tf.millisecond, 3);
+        break;
+      case flag::micros:
+        detail::append_int(out, tf.microsecond, 6);
+        break;
+      case flag::level_short:
+        out.push_back(short_level(msg.lvl));
+        break;
+      case flag::level_full:
+        out += to_string_view(msg.lvl);
+        break;
+      case flag::logger_name:
+        out += msg.logger_name;
+        break;
+      case flag::thread_id:
+        detail::append_uint(out, msg.thread_id);
+        break;
+      case flag::process_id:
+        detail::append_int(out, detail::process_id());
+        break;
+      case flag::source_short:
+        out += basename(msg.loc.file_name());
+        out.push_back(':');
+        detail::append_int(out, static_cast<std::int64_t>(msg.loc.line()));
+        break;
+      case flag::source_file:
+        out += msg.loc.file_name();
+        break;
+      case flag::source_line:
+        detail::append_int(out, static_cast<std::int64_t>(msg.loc.line()));
+        break;
+      case flag::source_func:
+        out += msg.loc.function_name();
+        break;
+      case flag::message:
+        out += msg.payload;
+        break;
+      case flag::color_start:
+        if (color_enabled_) {
+          out += detail::level_color(msg.lvl);
+        }
+        break;
+      case flag::color_end:
+        if (color_enabled_) {
+          out += detail::color_reset();
+        }
+        break;
+      case flag::none:
+        break;
       }
     }
   }
@@ -172,30 +171,54 @@ private:
 
   static flag flag_for(char c) {
     switch (c) {
-      case 'Y': return flag::year;
-      case 'm': return flag::month;
-      case 'b': return flag::month_short_name;
-      case 'd': return flag::day;
-      case 'a': return flag::weekday_short;
-      case 'H': return flag::hour_24;
-      case 'I': return flag::hour_12;
-      case 'M': return flag::minute;
-      case 'S': return flag::second;
-      case 'e': return flag::millis;
-      case 'f': return flag::micros;
-      case 'l': return flag::level_short;
-      case 'L': return flag::level_full;
-      case 'n': return flag::logger_name;
-      case 't': return flag::thread_id;
-      case 'P': return flag::process_id;
-      case 's': return flag::source_short;
-      case 'g': return flag::source_file;
-      case '#': return flag::source_line;
-      case '!': return flag::source_func;
-      case 'v': return flag::message;
-      case '^': return flag::color_start;
-      case '$': return flag::color_end;
-      default: return flag::none;
+    case 'Y':
+      return flag::year;
+    case 'm':
+      return flag::month;
+    case 'b':
+      return flag::month_short_name;
+    case 'd':
+      return flag::day;
+    case 'a':
+      return flag::weekday_short;
+    case 'H':
+      return flag::hour_24;
+    case 'I':
+      return flag::hour_12;
+    case 'M':
+      return flag::minute;
+    case 'S':
+      return flag::second;
+    case 'e':
+      return flag::millis;
+    case 'f':
+      return flag::micros;
+    case 'l':
+      return flag::level_short;
+    case 'L':
+      return flag::level_full;
+    case 'n':
+      return flag::logger_name;
+    case 't':
+      return flag::thread_id;
+    case 'P':
+      return flag::process_id;
+    case 's':
+      return flag::source_short;
+    case 'g':
+      return flag::source_file;
+    case '#':
+      return flag::source_line;
+    case '!':
+      return flag::source_func;
+    case 'v':
+      return flag::message;
+    case '^':
+      return flag::color_start;
+    case '$':
+      return flag::color_end;
+    default:
+      return flag::none;
     }
   }
 

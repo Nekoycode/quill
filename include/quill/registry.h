@@ -49,8 +49,8 @@ public:
   std::shared_ptr<logger> default_logger() {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!default_logger_) {
-      default_logger_ = std::make_shared<logger>(
-          "default", std::make_shared<sinks::console_sink>());
+      default_logger_ =
+          std::make_shared<logger>("default", std::make_shared<sinks::console_sink>());
       loggers_["default"] = default_logger_;
     }
     return default_logger_;
@@ -114,10 +114,16 @@ QUILL_INLINE void drop_logger(const std::string& name) {
   registry::instance().drop(name);
 }
 
-QUILL_INLINE void drop_all() { registry::instance().drop_all(); }
+QUILL_INLINE void drop_all() {
+  registry::instance().drop_all();
+}
 
-QUILL_INLINE void flush_all() { registry::instance().flush_all(); }
+QUILL_INLINE void flush_all() {
+  registry::instance().flush_all();
+}
 
-QUILL_INLINE void shutdown() { registry::instance().shutdown(); }
+QUILL_INLINE void shutdown() {
+  registry::instance().shutdown();
+}
 
 } // namespace quill
