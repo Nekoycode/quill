@@ -20,7 +20,7 @@ namespace quill::detail {
 // argument packs fall back to a single heap allocation.
 class deferred_message {
 public:
-  static constexpr std::size_t inline_capacity = 128;
+  static constexpr std::size_t inline_capacity = 64;
 
   deferred_message() noexcept = default;
 

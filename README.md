@@ -13,6 +13,9 @@ queue (deferred formatting, unlike spdlog's frontend-formatting async model).
 - **Header-only, zero mandatory dependencies** — built on the C++20 standard
   library (`std::format`, `std::chrono`, `std::source_location`,
   `std::jthread`, `std::stop_token`).
+- **Lightweight runtime footprint** — the async hot path is allocation-free
+  (small-buffer-optimized argument capture) and queue records are compact
+  (`async_msg` is 176 bytes; a 4096-entry queue is ~0.7 MB).
 - **spdlog-like API** — `logger`, `sinks`, pattern formatter, level filtering
   and a global registry feel familiar to spdlog users.
 - **Reliable concurrency** — an async logger with a bounded lock-free MPMC
@@ -112,9 +115,9 @@ Representative numbers (500k iterations, Release, null sink, gcc 15):
 
 | scenario | quill | spdlog |
 |---|---|---|
-| sync → null | 72 ns/op | 53 ns/op |
-| async (1 producer) → null | 94 ns/op | 345 ns/op |
-| async (4 producers) → null | 178 ns/op | 528 ns/op |
+| sync → null | 69 ns/op | 54 ns/op |
+| async (1 producer) → null | 101 ns/op | 324 ns/op |
+| async (4 producers) → null | 183 ns/op | 544 ns/op |
 
 The async path — quill's differentiator (deferred formatting + allocation-free
 frontend + backend thread pool) — is ~3× faster than spdlog's frontend-formatting

@@ -45,8 +45,16 @@ Target-based, namespace-alias (`quill::quill`), `BUILD_INTERFACE`/
 `find_package(quill CONFIG)` package. `CMakePresets.json` covers local dev,
 CI, and sanitizers; tests are `doctest` + CTest.
 
-## 7. Non-goals (for now)
+## 7. Lightweight, small runtime footprint
+
+The async hot path is allocation-free: `detail::deferred_message` is
+small-buffer-optimized (64-byte inline storage, heap only for large argument
+packs), and `log_msg` stores the logger name as a `std::string_view` to avoid a
+per-record copy. `async_msg` is 176 bytes, so a default 4096-entry queue is
+~0.7 MB. The heavy async machinery is only instantiated when `async_logger` is
+used; synchronous-only programs stay minimal.
+
+## 8. Non-goals (for now)
 
 - A `mcpp.toml` dual-build entry (mcpp is module-first and early-stage; deferred).
-- A compiled (non-header-only) library variant.
 - A compiled (non-header-only) library variant.
