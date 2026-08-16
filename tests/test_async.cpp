@@ -7,6 +7,7 @@
 #include <quill/async_logger.h>
 
 #include "capture_sink.h"
+#include "test_config.h"
 
 TEST_CASE("async logger delivers all messages from multiple threads") {
   auto cs = std::make_shared<quill::test::capture_sink>();
@@ -15,7 +16,7 @@ TEST_CASE("async logger delivers all messages from multiple threads") {
   lg->set_pattern("%v");
 
   constexpr int n_threads = 4;
-  constexpr int n_msgs = 1000;
+  constexpr int n_msgs = QUILL_TEST_ITERS(1000);
 
   std::vector<std::thread> ts;
   ts.reserve(n_threads);
@@ -40,7 +41,7 @@ TEST_CASE("async logger flushes pending messages before shutdown") {
   {
     auto lg = std::make_shared<quill::async_logger>("async2", std::move(sinks), 64);
     lg->set_pattern("%v");
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < QUILL_TEST_ITERS(1000); ++i) {
       lg->info("msg {}", i);
     }
   } // destructor drains the queue

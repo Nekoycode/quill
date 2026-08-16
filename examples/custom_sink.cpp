@@ -22,7 +22,7 @@ public:
 protected:
   void write_output(std::string_view line) override {
     std::lock_guard<std::mutex> lock(mutex_);
-    lines_.push_back(std::string(line));
+    lines_.emplace_back(line);
   }
 
 private:

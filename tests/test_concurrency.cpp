@@ -10,6 +10,7 @@
 #include <quill/quill.h>
 
 #include "capture_sink.h"
+#include "test_config.h"
 #include "test_util.h"
 
 TEST_CASE("sync logger is safe under concurrent use") {
@@ -18,7 +19,7 @@ TEST_CASE("sync logger is safe under concurrent use") {
   lg.set_pattern("%v");
 
   constexpr int n_threads = 8;
-  constexpr int n_msgs = 2000;
+  constexpr int n_msgs = QUILL_TEST_ITERS(2000);
 
   std::vector<std::thread> ts;
   ts.reserve(n_threads);
@@ -52,7 +53,7 @@ TEST_CASE("file sink is safe under concurrent use") {
   const std::string path = td.file("conc.log");
 
   constexpr int n_threads = 4;
-  constexpr int n_msgs = 1000;
+  constexpr int n_msgs = QUILL_TEST_ITERS(1000);
 
   {
     auto lg = quill::file_logger("f", path, true);

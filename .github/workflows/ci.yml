@@ -144,8 +144,10 @@ jobs:
 
       - name: Capture coverage
         run: |
-          lcov --capture --directory build/coverage --output-file coverage.info
-          lcov --remove coverage.info '*/_deps/*' '*/tests/*' '*/examples/*' '*/benchmarks/*' -o coverage.info
+          lcov --capture --directory build/coverage --output-file coverage.info \
+            --ignore-errors negative,gcov,source
+          lcov --remove coverage.info '*/_deps/*' '*/tests/*' '*/examples/*' '*/benchmarks/*' \
+            --ignore-errors negative,gcov,source -o coverage.info
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4

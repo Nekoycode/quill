@@ -1,5 +1,7 @@
 #include <doctest/doctest.h>
 
+#include <ostream>
+
 #include <quill/level.h>
 
 TEST_CASE("level enumerator values") {

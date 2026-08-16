@@ -8,6 +8,7 @@ int main() {
   logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [%t] %v");
 
   std::vector<std::thread> threads;
+  threads.reserve(4);
   for (int t = 0; t < 4; ++t) {
     threads.emplace_back([logger, t] {
       for (int i = 0; i < 100; ++i) {
