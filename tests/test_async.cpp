@@ -46,7 +46,7 @@ TEST_CASE("async logger flushes pending messages before shutdown") {
     }
   } // destructor drains the queue
 
-  CHECK(cs->count() == 1000);
+  CHECK(cs->count() == QUILL_TEST_ITERS(1000));
 }
 
 TEST_CASE("async logger with multiple backends delivers all messages") {
@@ -56,7 +56,7 @@ TEST_CASE("async logger with multiple backends delivers all messages") {
   lg->set_pattern("%v");
 
   constexpr int n_threads = 8;
-  constexpr int n_msgs = 2000;
+  constexpr int n_msgs = QUILL_TEST_ITERS(2000);
 
   std::vector<std::thread> ts;
   ts.reserve(n_threads);
