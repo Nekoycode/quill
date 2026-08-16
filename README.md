@@ -28,6 +28,8 @@ queue (deferred formatting, unlike spdlog's frontend-formatting async model).
   (`QUILL_ACTIVE_LEVEL`).
 - **Highly customizable** — custom sinks, custom formatters, custom pattern
   flags, per-sink levels/patterns.
+- **Built-in sinks** — console (auto color), basic file, rolling file
+  (size-based, `max_files`), daily file, null, and JSON.
 - **Modern CMake** — target-based build, CMake presets for local builds and CI,
   install/export with `find_package(quill CONFIG)` support.
 
@@ -143,3 +145,8 @@ cmake/            CMake helpers and package-config template
 ## License
 
 [MIT](LICENSE)
+
+## Versioning
+
+This project follows [Semantic Versioning](https://semver.org/). Changes are
+tracked in [CHANGELOG.md](CHANGELOG.md); releases are tagged `vX.Y.Z`.

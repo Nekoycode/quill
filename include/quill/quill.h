@@ -101,9 +101,15 @@ inline std::shared_ptr<sinks::sink> basic_file_sink(std::string filename, bool t
   return std::make_shared<sinks::basic_file_sink>(std::move(filename), truncate);
 }
 
+inline std::shared_ptr<sinks::sink> rolling_file_sink(std::string filename, std::size_t max_size,
+                                                      std::size_t max_files) {
+  return std::make_shared<sinks::rolling_file_sink>(std::move(filename), max_size, max_files);
+}
+
+// spdlog-compatible alias.
 inline std::shared_ptr<sinks::sink> rotating_file_sink(std::string filename, std::size_t max_size,
                                                        std::size_t max_files) {
-  return std::make_shared<sinks::rotating_file_sink>(std::move(filename), max_size, max_files);
+  return rolling_file_sink(std::move(filename), max_size, max_files);
 }
 
 inline std::shared_ptr<sinks::sink> daily_file_sink(std::string filename, int rotation_hour = 0,

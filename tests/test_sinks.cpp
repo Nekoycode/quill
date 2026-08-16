@@ -61,6 +61,25 @@ TEST_CASE("rotating_file_sink rotates by size") {
   CHECK(fs::exists(path + ".1"));
 }
 
+TEST_CASE("rolling_file_sink rotates by size and keeps max_files") {
+  quill::test::temp_dir td;
+  const std::string path = td.file("roll.log");
+
+  {
+    auto sink = quill::rolling_file_sink(path, /*max_size=*/20, /*max_files=*/2);
+    auto lg = quill::create_logger("roll", sink);
+    lg->set_pattern("%v");
+    for (int i = 0; i < 20; ++i) {
+      lg->info("line number {}", i);
+    }
+    lg->flush();
+  }
+
+  CHECK(fs::exists(path + ".1"));
+  CHECK(fs::exists(path + ".2"));
+  CHECK_FALSE(fs::exists(path + ".3")); // max_files=2, so nothing beyond .2
+}
+
 TEST_CASE("daily_file_sink writes to a dated file") {
   quill::test::temp_dir td;
   const std::string base = td.file("daily");
