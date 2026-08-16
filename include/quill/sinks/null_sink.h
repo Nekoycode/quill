@@ -12,7 +12,7 @@ public:
   void flush() override {}
 
 protected:
-  void write_output(const std::string& /*line*/) override {}
+  void write_output(std::string_view /*line*/) override {}
 };
 
 } // namespace quill::sinks

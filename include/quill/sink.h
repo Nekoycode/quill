@@ -3,6 +3,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include <quill/formatter.h>
@@ -31,11 +32,10 @@ public:
 
   // Entry point. `msg.payload` holds the pre-formatted message text (`%v`).
   virtual void write(const log_msg& msg) {
-    std::string line;
-    line.reserve(msg.payload.size() + 64);
+    quill::format_buffer line;
     formatter_->format(msg, line);
     line.push_back('\n');
-    write_output(line);
+    write_output(line.view());
   }
 
   virtual void flush() = 0;
@@ -71,7 +71,7 @@ public:
 
 protected:
   // Raw I/O: writes an already-formatted line to the sink's destination.
-  virtual void write_output(const std::string& line) = 0;
+  virtual void write_output(std::string_view line) = 0;
 
   mutable std::mutex mutex_;
   std::unique_ptr<quill::formatter> formatter_;

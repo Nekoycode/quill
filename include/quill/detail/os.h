@@ -87,7 +87,7 @@ inline const char* weekday_short_name(int weekday) {
   return (weekday >= 0 && weekday <= 6) ? names[weekday] : "?";
 }
 
-inline void append_int(std::string& out, std::int64_t value, int width = 0) {
+template <typename S> inline void append_int(S& out, std::int64_t value, int width = 0) {
   char buf[32];
   if (width > 0) {
     std::snprintf(buf, sizeof(buf), "%0*lld", width, static_cast<long long>(value));
@@ -97,7 +97,7 @@ inline void append_int(std::string& out, std::int64_t value, int width = 0) {
   out += buf;
 }
 
-inline void append_uint(std::string& out, std::uint64_t value) {
+template <typename S> inline void append_uint(S& out, std::uint64_t value) {
   char buf[32];
   std::snprintf(buf, sizeof(buf), "%llu", static_cast<unsigned long long>(value));
   out += buf;

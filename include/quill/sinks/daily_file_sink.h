@@ -36,7 +36,7 @@ public:
   }
 
 protected:
-  void write_output(const std::string& line) override {
+  void write_output(std::string_view line) override {
     std::lock_guard<std::mutex> lock(mutex_);
     if (file_ == nullptr) {
       return;

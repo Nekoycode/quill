@@ -29,7 +29,7 @@ public:
     compile_pattern();
   }
 
-  void format(const log_msg& msg, std::string& out) const override {
+  void format(const log_msg& msg, format_buffer& out) const override {
     const detail::tm_fields tf =
         has_time_flag_ ? detail::to_local_time(msg.time) : detail::tm_fields{};
     for (const auto& it : items_) {

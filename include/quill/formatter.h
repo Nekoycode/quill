@@ -1,11 +1,15 @@
 #pragma once
 
 #include <memory>
-#include <string>
 
+#include <quill/detail/small_buffer.h>
 #include <quill/log_msg.h>
 
 namespace quill {
+
+// Buffer formatters write into. A 256-byte inline buffer keeps the common case
+// heap-allocation-free; larger lines overflow to the heap.
+using format_buffer = detail::small_buffer<256>;
 
 // A formatter renders a `log_msg` (including its pre-formatted `payload`, i.e.
 // the `%v` text) into a complete output line.
@@ -13,7 +17,7 @@ class formatter {
 public:
   virtual ~formatter() = default;
 
-  virtual void format(const log_msg& msg, std::string& out) const = 0;
+  virtual void format(const log_msg& msg, format_buffer& out) const = 0;
 
   // Returns a heap-allocated copy. Sinks own their formatter, so a clone is
   // needed whenever a formatter is shared.
