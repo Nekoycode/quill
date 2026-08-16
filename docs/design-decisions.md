@@ -48,8 +48,5 @@ CI, and sanitizers; tests are `doctest` + CTest.
 ## 7. Non-goals (for now)
 
 - A `mcpp.toml` dual-build entry (mcpp is module-first and early-stage; deferred).
-- Multiple backend threads: the async logger uses one backend thread, so
-  multi-producer aggregate throughput is bounded by serialized formatting on
-  the backend (the frontend stays allocation-free regardless).
 - A compiled (non-header-only) library variant.
 - A compiled (non-header-only) library variant.

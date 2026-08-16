@@ -136,11 +136,12 @@ std::shared_ptr<logger> create_logger(std::string name, Sinks&&... sinks) {
 
 template <typename... Sinks>
 std::shared_ptr<async_logger> create_async_logger(std::string name, std::size_t queue_size,
-                                                  Sinks&&... sinks) {
+                                                  std::size_t backend_threads, Sinks&&... sinks) {
   std::vector<std::shared_ptr<sinks::sink>> v;
   v.reserve(sizeof...(Sinks));
   (v.push_back(std::forward<Sinks>(sinks)), ...);
-  auto l = std::make_shared<async_logger>(std::move(name), std::move(v), queue_size);
+  auto l =
+      std::make_shared<async_logger>(std::move(name), std::move(v), queue_size, backend_threads);
   registry::instance().register_logger(l);
   return l;
 }
@@ -160,14 +161,16 @@ inline std::shared_ptr<logger> file_logger(const std::string& name, const std::s
 }
 
 inline std::shared_ptr<async_logger> stdout_logger_async(const std::string& name,
-                                                         std::size_t queue_size = 4096) {
-  return create_async_logger(name, queue_size, stdout_sink());
+                                                         std::size_t queue_size = 4096,
+                                                         std::size_t backend_threads = 1) {
+  return create_async_logger(name, queue_size, backend_threads, stdout_sink());
 }
 
 inline std::shared_ptr<async_logger> file_logger_async(const std::string& name,
                                                        const std::string& filename,
-                                                       std::size_t queue_size = 4096) {
-  return create_async_logger(name, queue_size, basic_file_sink(filename));
+                                                       std::size_t queue_size = 4096,
+                                                       std::size_t backend_threads = 1) {
+  return create_async_logger(name, queue_size, backend_threads, basic_file_sink(filename));
 }
 
 } // namespace quill

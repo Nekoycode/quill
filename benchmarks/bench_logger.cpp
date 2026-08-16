@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
 
   // 3) Async logger -> null sink, single producer.
   {
-    auto lg = quill::create_async_logger("async", 8192, quill::null_sink());
+    auto lg = quill::create_async_logger("async", 8192, 1, quill::null_sink());
     lg->set_pattern("%v");
     const double ns =
         quill::bench::time_per_op(iters, [&] { lg->info("benchmark message {}", 42); });
@@ -42,11 +42,11 @@ int main(int argc, char** argv) {
     quill::bench::report("async logger -> null sink (1 thread)", ns);
   }
 
-  // 4) Async logger -> null sink, four producers (aggregate throughput).
+  // 4) Async logger -> null sink, four producers, one backend.
   {
     constexpr int n_threads = 4;
     const std::size_t per_thread = iters / n_threads;
-    auto lg = quill::create_async_logger("async-mt", 65536, quill::null_sink());
+    auto lg = quill::create_async_logger("async-mt", 65536, 1, quill::null_sink());
     lg->set_pattern("%v");
 
     const auto start = std::chrono::steady_clock::now();
@@ -66,7 +66,34 @@ int main(int argc, char** argv) {
 
     const double total_ns = std::chrono::duration<double, std::nano>(end - start).count();
     const double ns_per_op = total_ns / static_cast<double>(per_thread * n_threads);
-    quill::bench::report("async logger -> null sink (4 threads)", ns_per_op);
+    quill::bench::report("async logger -> null sink (4 producers, 1 backend)", ns_per_op);
+  }
+
+  // 5) Async logger -> null sink, four producers, four backends.
+  {
+    constexpr int n_threads = 4;
+    const std::size_t per_thread = iters / n_threads;
+    auto lg = quill::create_async_logger("async-mt4", 65536, n_threads, quill::null_sink());
+    lg->set_pattern("%v");
+
+    const auto start = std::chrono::steady_clock::now();
+    std::vector<std::thread> ts;
+    for (int t = 0; t < n_threads; ++t) {
+      ts.emplace_back([lg, per_thread] {
+        for (std::size_t i = 0; i < per_thread; ++i) {
+          lg->info("benchmark message {}", 42);
+        }
+      });
+    }
+    for (auto& th : ts) {
+      th.join();
+    }
+    lg->flush();
+    const auto end = std::chrono::steady_clock::now();
+
+    const double total_ns = std::chrono::duration<double, std::nano>(end - start).count();
+    const double ns_per_op = total_ns / static_cast<double>(per_thread * n_threads);
+    quill::bench::report("async logger -> null sink (4 producers, 4 backends)", ns_per_op);
   }
 
   return 0;

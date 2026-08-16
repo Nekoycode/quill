@@ -61,12 +61,15 @@ providing `get`/`create`/`drop`, a default logger, and `flush_all`/`shutdown`.
 
 `async_logger` owns a `detail::blocking_queue` (a bounded lock-free MPMC ring
 buffer — Dmitry Vyukov's algorithm — wrapped with condition-variable
-backpressure) and a `std::jthread` backend. The frontend captures the message
-(format string + arguments) without formatting, into a small-buffer-optimized
-`detail::deferred_message` (no heap allocation for the common case); the
-backend formats the `%v` text and applies each sink's formatter before writing.
-Destruction requests a stop and drains all pending records, so no in-flight
-message is lost.
+backpressure) and a pool of `std::jthread` backend threads (configurable,
+default 1). The frontend captures the message (format string + arguments)
+without formatting, into a small-buffer-optimized `detail::deferred_message`
+(no heap allocation for the common case); a backend thread formats the `%v`
+text and applies each sink's formatter before writing. An atomic pending-record
+counter lets `flush()` wait until every enqueued record is written before
+flushing the sinks, which stays correct across multiple backends. Destruction
+requests a stop and drains all pending records, so no in-flight message is
+lost.
 
 ## Threading model
 

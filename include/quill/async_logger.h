@@ -1,8 +1,7 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
-#include <cstdint>
-#include <future>
 #include <memory>
 #include <string>
 #include <thread>
@@ -16,56 +15,57 @@
 
 namespace quill {
 
-// Message exchanged between the async frontend and the backend writer thread.
+// Message exchanged between the async frontend and the backend writer threads.
 struct async_msg {
-  enum class kind : std::uint8_t { log, flush };
-
-  kind k{kind::log};
   log_msg msg;                       // metadata (+ payload when not deferred)
   detail::deferred_message deferred; // set when formatting is deferred
-  std::promise<void>* sync{nullptr}; // used by flush to signal completion
 };
 
-// A logger whose sink writes are performed on a dedicated background thread.
-// The frontend only captures the message (metadata + arguments); the backend
-// formats the `%v` text and applies each sink's formatter before writing.
-// Shutdown requests a stop and drains all pending messages.
+// A logger whose sink writes are performed on a pool of background threads.
+// The frontend only captures the message (metadata + arguments, allocation-free
+// for the common case); the backend threads format the `%v` text and apply each
+// sink's formatter before writing.
+//
+// With `backend_threads > 1`, records are no longer strictly FIFO ordered, but
+// the frontend stays off the I/O path and aggregate throughput scales with the
+// pool size. Shutdown requests a stop and drains all pending messages.
 class async_logger final : public logger {
 public:
   explicit async_logger(std::string name, std::vector<std::shared_ptr<sinks::sink>> sinks,
-                        std::size_t queue_size = 4096)
-      : logger(std::move(name), std::move(sinks), /*defers_formatting=*/true), queue_(queue_size),
-        backend_thread_([this](std::stop_token st) { backend_loop(st); }) {}
+                        std::size_t queue_size = 4096, std::size_t backend_threads = 1)
+      : logger(std::move(name), std::move(sinks), /*defers_formatting=*/true), queue_(queue_size) {
+    backend_threads_.reserve(backend_threads);
+    for (std::size_t i = 0; i < backend_threads; ++i) {
+      backend_threads_.emplace_back([this](std::stop_token st) { backend_loop(st); });
+    }
+  }
 
   ~async_logger() override {
-    backend_thread_.request_stop();
+    for (auto& t : backend_threads_) {
+      t.request_stop();
+    }
     queue_.notify_all();
   }
 
   void flush() override {
-    std::promise<void> p;
-    auto f = p.get_future();
-    queue_.enqueue(async_msg{async_msg::kind::flush, log_msg{}, detail::deferred_message{}, &p});
-    f.wait();
+    // Wait until every enqueued record has been written to its sink, then flush.
+    // (A pending-record counter makes this correct across multiple backends.)
+    while (pending_.load(std::memory_order_acquire) != 0) {
+      std::this_thread::yield();
+    }
+    for (auto& s : sinks_) {
+      s->flush();
+    }
   }
 
 protected:
   void log_meta(log_msg&& meta, detail::deferred_message&& deferred) override {
-    queue_.enqueue(async_msg{async_msg::kind::log, std::move(meta), std::move(deferred), nullptr});
+    pending_.fetch_add(1, std::memory_order_relaxed);
+    queue_.enqueue(async_msg{std::move(meta), std::move(deferred)});
   }
 
 private:
   void process(async_msg& m) {
-    if (m.k == async_msg::kind::flush) {
-      for (auto& s : sinks_) {
-        s->flush();
-      }
-      if (m.sync != nullptr) {
-        m.sync->set_value();
-      }
-      return;
-    }
-
     if (!m.deferred.empty()) {
       std::string text;
       m.deferred.format_into(text);
@@ -76,6 +76,7 @@ private:
         s->write(m.msg);
       }
     }
+    pending_.fetch_sub(1, std::memory_order_release);
   }
 
   void backend_loop(std::stop_token st) {
@@ -93,7 +94,8 @@ private:
   }
 
   detail::blocking_queue<async_msg> queue_;
-  std::jthread backend_thread_;
+  std::vector<std::jthread> backend_threads_;
+  std::atomic<std::size_t> pending_{0};
 };
 
 } // namespace quill

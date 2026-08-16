@@ -47,3 +47,29 @@ TEST_CASE("async logger flushes pending messages before shutdown") {
 
   CHECK(cs->count() == 1000);
 }
+
+TEST_CASE("async logger with multiple backends delivers all messages") {
+  auto cs = std::make_shared<quill::test::capture_sink>();
+  std::vector<std::shared_ptr<quill::sinks::sink>> sinks{cs};
+  auto lg = std::make_shared<quill::async_logger>("async4", std::move(sinks), 1024, /*backends=*/4);
+  lg->set_pattern("%v");
+
+  constexpr int n_threads = 8;
+  constexpr int n_msgs = 2000;
+
+  std::vector<std::thread> ts;
+  ts.reserve(n_threads);
+  for (int t = 0; t < n_threads; ++t) {
+    ts.emplace_back([lg, t] {
+      for (int i = 0; i < n_msgs; ++i) {
+        lg->info("t{} m{}", t, i);
+      }
+    });
+  }
+  for (auto& th : ts) {
+    th.join();
+  }
+
+  lg->flush();
+  CHECK(cs->count() == static_cast<std::size_t>(n_threads) * n_msgs);
+}
