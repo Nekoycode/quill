@@ -28,6 +28,7 @@ option(QUILL_USE_STD_FORMAT "Use std::format (C++20) instead of the fmt library"
 option(QUILL_BUILD_TESTS "Build unit tests" ${PROJECT_IS_TOP_LEVEL})
 option(QUILL_BUILD_EXAMPLES "Build examples" ${PROJECT_IS_TOP_LEVEL})
 option(QUILL_BUILD_BENCHMARKS "Build benchmarks" OFF)
+option(QUILL_BUILD_SPDLOG_BENCH "Build the spdlog comparison benchmark (requires spdlog)" OFF)
 option(QUILL_BUILD_DOCS "Enable the 'docs' target (requires Doxygen)" OFF)
 option(QUILL_ENABLE_CLANG_TIDY "Run clang-tidy during compilation" OFF)
 option(QUILL_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)

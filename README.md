@@ -99,6 +99,27 @@ cmake --build --preset bench
 Each binary accepts an optional iteration count, e.g.
 `./build/bench/benchmarks/bench_logger 5000000`.
 
+An optional spdlog comparison benchmark is available when spdlog is installed
+(`sudo apt install libspdlog-dev`):
+
+```bash
+cmake --preset bench -DQUILL_BUILD_SPDLOG_BENCH=ON
+cmake --build --preset bench
+./build/bench/benchmarks/bench_spdlog
+```
+
+Representative numbers (500k iterations, Release, null sink, gcc 15):
+
+| scenario | quill | spdlog |
+|---|---|---|
+| sync → null | 72 ns/op | 53 ns/op |
+| async (1 producer) → null | 94 ns/op | 345 ns/op |
+| async (4 producers) → null | 178 ns/op | 528 ns/op |
+
+The async path — quill's differentiator (deferred formatting + allocation-free
+frontend + backend thread pool) — is ~3× faster than spdlog's frontend-formatting
+async logger; the synchronous path is close but slightly behind.
+
 > Note: with a null sink, the async logger shows a higher per-op cost than the
 > synchronous one because it pays for queue + thread handoff with no I/O to
 > hide it behind. Async wins once the sink performs real I/O (the backend
