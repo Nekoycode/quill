@@ -2,12 +2,14 @@
 
 #include <atomic>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
 #include <quill/common.h>
+#include <quill/detail/circular_buffer.h>
 #include <quill/detail/format.h>
 #include <quill/detail/os.h>
 #include <quill/level.h>
@@ -120,6 +122,43 @@ public:
     }
   }
 
+  // -- Backtrace -----------------------------------------------------------
+  //
+  // When enabled, the most recent `n` log records are kept in a ring buffer.
+  // `dump_backtrace` re-emits them through the sinks (useful after an error or
+  // a crash handler).
+
+  void enable_backtrace(std::size_t n) {
+    if (n == 0) {
+      disable_backtrace();
+      return;
+    }
+    std::lock_guard<std::mutex> lock(backtrace_mutex_);
+    backtrace_ = std::make_unique<detail::circular_buffer<log_msg>>(n);
+    backtrace_enabled_.store(true, std::memory_order_relaxed);
+  }
+
+  void disable_backtrace() {
+    // Stop capturing but keep the buffer so a later dump_backtrace() can still
+    // replay the most recent records.
+    backtrace_enabled_.store(false, std::memory_order_relaxed);
+  }
+
+  void dump_backtrace() {
+    std::vector<log_msg> msgs;
+    {
+      std::lock_guard<std::mutex> lock(backtrace_mutex_);
+      if (backtrace_) {
+        msgs = backtrace_->snapshot();
+      }
+    }
+    for (auto& m : msgs) {
+      for (auto& s : sinks_) {
+        s->write(m);
+      }
+    }
+  }
+
   const std::string& name() const noexcept { return name_; }
 
   const std::vector<std::shared_ptr<sinks::sink>>& sinks() const noexcept {
@@ -129,10 +168,10 @@ public:
 
 protected:
   // Write path. The default implementation writes synchronously; async_logger
-  // overrides it to enqueue the line.
-  virtual void sink_it_(std::size_t sink_index, std::string&& line) {
+  // overrides it to enqueue the record.
+  virtual void sink_it_(std::size_t sink_index, const log_msg& msg) {
     if (sink_index < sinks_.size()) {
-      sinks_[sink_index]->write(line);
+      sinks_[sink_index]->write(msg);
     }
   }
 
@@ -156,21 +195,26 @@ private:
     meta.payload = std::move(message_text);
 
     for (std::size_t i = 0; i < sinks_.size(); ++i) {
-      auto& s = sinks_[i];
-      if (!s->should_log(lvl)) {
-        continue;
+      if (sinks_[i]->should_log(lvl)) {
+        sink_it_(i, meta);
       }
-      std::string line;
-      line.reserve(meta.payload.size() + 64);
-      s->formatter().format(meta, line);
-      line.push_back('\n');
-      sink_it_(i, std::move(line));
+    }
+
+    if (backtrace_enabled_.load(std::memory_order_relaxed)) {
+      std::lock_guard<std::mutex> lock(backtrace_mutex_);
+      if (backtrace_) {
+        backtrace_->push(meta);
+      }
     }
 
     if (lvl >= flush_level_.load(std::memory_order_relaxed)) {
       flush();
     }
   }
+
+  std::atomic<bool> backtrace_enabled_{false};
+  std::mutex backtrace_mutex_;
+  std::unique_ptr<detail::circular_buffer<log_msg>> backtrace_;
 };
 
 } // namespace quill

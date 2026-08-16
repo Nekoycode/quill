@@ -27,20 +27,6 @@ public:
     }
   }
 
-  void write(const std::string& payload) override {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (file_ == nullptr) {
-      return;
-    }
-    if (current_size_ + payload.size() > max_size_) {
-      rotate();
-    }
-    if (file_ != nullptr) {
-      std::fwrite(payload.data(), 1, payload.size(), file_);
-      current_size_ += payload.size();
-    }
-  }
-
   void flush() override {
     std::lock_guard<std::mutex> lock(mutex_);
     if (file_ != nullptr) {
@@ -49,6 +35,21 @@ public:
   }
 
   const std::string& filename() const noexcept { return base_filename_; }
+
+protected:
+  void write_output(const std::string& line) override {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (file_ == nullptr) {
+      return;
+    }
+    if (current_size_ + line.size() > max_size_) {
+      rotate();
+    }
+    if (file_ != nullptr) {
+      std::fwrite(line.data(), 1, line.size(), file_);
+      current_size_ += line.size();
+    }
+  }
 
 private:
   void rotate() {

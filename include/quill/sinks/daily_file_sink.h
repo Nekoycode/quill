@@ -30,7 +30,15 @@ public:
     }
   }
 
-  void write(const std::string& payload) override {
+  void flush() override {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (file_ != nullptr) {
+      std::fflush(file_);
+    }
+  }
+
+protected:
+  void write_output(const std::string& line) override {
     std::lock_guard<std::mutex> lock(mutex_);
     if (file_ == nullptr) {
       return;
@@ -42,14 +50,7 @@ public:
       open_for(date);
     }
     if (file_ != nullptr) {
-      std::fwrite(payload.data(), 1, payload.size(), file_);
-    }
-  }
-
-  void flush() override {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (file_ != nullptr) {
-      std::fflush(file_);
+      std::fwrite(line.data(), 1, line.size(), file_);
     }
   }
 
@@ -67,7 +68,7 @@ private:
 #else
     localtime_r(&tt, &t);
 #endif
-    char buf[16];
+    char buf[40];
     std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d", t.tm_year + 1900,
                   t.tm_mon + 1, t.tm_mday);
     return buf;

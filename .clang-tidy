@@ -1,0 +1,27 @@
+# clang-tidy configuration for quill. See:
+#   https://clang.llvm.org/extra/clang-tidy/
+#
+# Run via:  cmake -DQUILL_ENABLE_CLANG_TIDY=ON -S . -B build
+
+Checks: >
+  bugprone-*,
+  clang-analyzer-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -modernize-use-auto,
+  -modernize-avoid-c-arrays,
+  -readability-magic-numbers,
+  -readability-identifier-length,
+  -readability-function-cognitive-complexity,
+  -readability-isolate-declaration,
+  -bugprone-easily-swappable-parameters,
+
+WarningsAsErrors: ''
+
+# Only report diagnostics for the library headers (not tests/examples).
+HeaderFilterRegex: '^include/quill/.*'
+
+FormatStyle: file

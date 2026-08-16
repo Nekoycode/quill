@@ -17,6 +17,9 @@ performs the actual I/O through a bounded lock-free queue.
 - **Reliable concurrency** — an async logger with a bounded lock-free MPMC
   queue and a background writer thread; graceful shutdown drains all pending
   messages.
+- **Backtrace** — keep the last N records in a ring buffer and replay them after
+  an error (`enable_backtrace` / `dump_backtrace`).
+- **Structured logging** — a `json_sink` that emits one JSON object per record.
 - **Compile-time format string checking** and **compile-time level gating**
   (`QUILL_ACTIVE_LEVEL`).
 - **Highly customizable** — custom sinks, custom formatters, custom pattern
@@ -54,7 +57,7 @@ ctest  --preset dev         # run tests
 ```
 
 Available configure presets: `dev`, `debug`, `release`, `relwithdebinfo`,
-`ci`, `asan`, `tsan`.
+`bench`, `ci`, `asan`, `tsan`.
 
 ### Consuming from another CMake project
 
@@ -62,6 +65,17 @@ Available configure presets: `dev`, `debug`, `release`, `relwithdebinfo`,
 find_package(quill CONFIG REQUIRED)
 target_link_libraries(my_app PRIVATE quill::quill)
 ```
+
+## Development
+
+- **Format** — `cmake --build . --target format` (apply) and
+  `cmake --build . --target check-format` (verify), using `.clang-format`.
+- **Static analysis** — configure with `-DQUILL_ENABLE_CLANG_TIDY=ON` to run
+  `clang-tidy` (see `.clang-tidy`) during compilation.
+- **API docs** — `cmake --build . --target docs` (requires Doxygen; see
+  `Doxyfile`).
+- **Design notes** — see [`docs/architecture.md`](docs/architecture.md) and
+  [`docs/design-decisions.md`](docs/design-decisions.md).
 
 ## Benchmarks
 
@@ -89,6 +103,8 @@ Each binary accepts an optional iteration count, e.g.
 include/quill/    public headers (header-only library)
 tests/            unit tests (doctest, run through CTest)
 examples/         small usage examples
+benchmarks/       micro-benchmarks (std::chrono)
+docs/             architecture and design notes
 cmake/            CMake helpers and package-config template
 .github/workflows CI (GitHub Actions, preset-driven)
 ```

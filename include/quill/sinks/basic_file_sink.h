@@ -27,13 +27,6 @@ public:
     }
   }
 
-  void write(const std::string& payload) override {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (file_ != nullptr) {
-      std::fwrite(payload.data(), 1, payload.size(), file_);
-    }
-  }
-
   void flush() override {
     std::lock_guard<std::mutex> lock(mutex_);
     if (file_ != nullptr) {
@@ -42,6 +35,14 @@ public:
   }
 
   const std::string& filename() const noexcept { return filename_; }
+
+protected:
+  void write_output(const std::string& line) override {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (file_ != nullptr) {
+      std::fwrite(line.data(), 1, line.size(), file_);
+    }
+  }
 
 private:
   std::string filename_;

@@ -28,7 +28,20 @@ option(QUILL_USE_STD_FORMAT "Use std::format (C++20) instead of the fmt library"
 option(QUILL_BUILD_TESTS "Build unit tests" ${PROJECT_IS_TOP_LEVEL})
 option(QUILL_BUILD_EXAMPLES "Build examples" ${PROJECT_IS_TOP_LEVEL})
 option(QUILL_BUILD_BENCHMARKS "Build benchmarks" OFF)
+option(QUILL_BUILD_DOCS "Enable the 'docs' target (requires Doxygen)" OFF)
+option(QUILL_ENABLE_CLANG_TIDY "Run clang-tidy during compilation" OFF)
 option(QUILL_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
+
+# Static analysis: clang-tidy must be wired into CMAKE_CXX_CLANG_TIDY before any
+# target is created for it to take effect.
+if(QUILL_ENABLE_CLANG_TIDY)
+  find_program(QUILL_CLANG_TIDY_EXE NAMES clang-tidy)
+  if(QUILL_CLANG_TIDY_EXE)
+    set(CMAKE_CXX_CLANG_TIDY "${QUILL_CLANG_TIDY_EXE}")
+  else()
+    message(WARNING "QUILL_ENABLE_CLANG_TIDY is ON but clang-tidy was not found")
+  endif()
+endif()
 
 # ---------------------------------------------------------------------------
 # Dependencies (fetched only when needed; none are required at runtime)
@@ -98,6 +111,45 @@ endif()
 
 if(QUILL_BUILD_BENCHMARKS)
   add_subdirectory(benchmarks)
+endif()
+
+# ---------------------------------------------------------------------------
+# Developer conveniences: clang-format and Doxygen targets (optional tools)
+# ---------------------------------------------------------------------------
+find_program(QUILL_CLANG_FORMAT_EXE NAMES clang-format)
+if(QUILL_CLANG_FORMAT_EXE)
+  file(GLOB_RECURSE QUILL_FORMAT_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/examples/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/*.h")
+
+  add_custom_target(
+    format
+    COMMAND "${QUILL_CLANG_FORMAT_EXE}" -i ${QUILL_FORMAT_SOURCES}
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Formatting sources with clang-format")
+
+  add_custom_target(
+    check-format
+    COMMAND "${QUILL_CLANG_FORMAT_EXE}" --dry-run --Werror ${QUILL_FORMAT_SOURCES}
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Checking formatting with clang-format")
+endif()
+
+if(QUILL_BUILD_DOCS)
+  find_program(QUILL_DOXYGEN_EXE NAMES doxygen)
+  if(QUILL_DOXYGEN_EXE)
+    add_custom_target(
+      docs
+      COMMAND "${QUILL_DOXYGEN_EXE}" "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile"
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+      COMMENT "Generating API documentation with Doxygen")
+  else()
+    message(WARNING "QUILL_BUILD_DOCS is ON but Doxygen was not found")
+  endif()
 endif()
 
 # ---------------------------------------------------------------------------

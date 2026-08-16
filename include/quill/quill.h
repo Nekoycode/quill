@@ -20,6 +20,7 @@
 #include <quill/sinks/rotating_file_sink.h>
 #include <quill/sinks/daily_file_sink.h>
 #include <quill/sinks/null_sink.h>
+#include <quill/sinks/json_sink.h>
 #include <quill/logger.h>
 #include <quill/async_logger.h>
 #include <quill/registry.h>
@@ -123,6 +124,11 @@ inline std::shared_ptr<sinks::sink> daily_file_sink(std::string filename,
 
 inline std::shared_ptr<sinks::sink> null_sink() {
   return std::make_shared<sinks::null_sink>();
+}
+
+inline std::shared_ptr<sinks::sink> json_sink(std::string filename,
+                                              bool truncate = true) {
+  return std::make_shared<sinks::json_sink>(std::move(filename), truncate);
 }
 
 // ---------------------------------------------------------------------------

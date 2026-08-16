@@ -1,0 +1,28 @@
+# clang-format style for quill. See:
+#   https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+#
+# Apply with:  cmake --build . --target format
+# Check with:  cmake --build . --target check-format
+
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: c++20
+
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+ColumnLimit: 100
+
+AccessModifierOffset: -2
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+BreakBeforeBraces: Attach
+
+DerivePointerAlignment: false
+PointerAlignment: Left
+
+# Preserve the manual include grouping (std headers, then <quill/...>, then
+# local). Sorting is easy to enable later if a canonical order is preferred.
+SortIncludes: false

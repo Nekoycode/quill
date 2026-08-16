@@ -9,11 +9,6 @@
 // them to an I/O destination.
 class vector_sink final : public quill::sinks::sink {
 public:
-  void write(const std::string& payload) override {
-    std::lock_guard<std::mutex> lock(mutex_);
-    lines_.push_back(payload);
-  }
-
   void flush() override {}
 
   void print_all() const {
@@ -21,6 +16,12 @@ public:
     for (const auto& line : lines_) {
       std::cout << line;
     }
+  }
+
+protected:
+  void write_output(const std::string& line) override {
+    std::lock_guard<std::mutex> lock(mutex_);
+    lines_.push_back(line);
   }
 
 private:

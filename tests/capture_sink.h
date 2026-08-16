@@ -11,11 +11,6 @@ namespace quill::test {
 // A sink that records every written line, for assertions in unit tests.
 class capture_sink final : public quill::sinks::sink {
 public:
-  void write(const std::string& payload) override {
-    std::lock_guard<std::mutex> lock(mutex_);
-    lines_.push_back(payload);
-  }
-
   void flush() override {}
 
   std::vector<std::string> lines() const {
@@ -26,6 +21,12 @@ public:
   std::size_t count() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return lines_.size();
+  }
+
+protected:
+  void write_output(const std::string& line) override {
+    std::lock_guard<std::mutex> lock(mutex_);
+    lines_.push_back(line);
   }
 
 private:

@@ -21,14 +21,15 @@ struct async_msg {
 
   kind k{kind::log};
   std::size_t sink_index{0};
-  std::string payload;
-  std::promise<void>* sync{nullptr}; // used by flush to signal completion
+  log_msg msg;                  // used when k == log
+  std::promise<void>* sync{nullptr}; // used when k == flush
 };
 
 // A logger whose sink writes are performed on a dedicated background thread.
-// The hot path formats the line and enqueues it; the backend dequeues and
-// writes. Shutdown (destruction) requests a stop and drains all pending
-// messages, so no in-flight record is lost.
+// The frontend formats only the message text and enqueues the record; the
+// backend applies each sink's formatter and writes. Shutdown (destruction)
+// requests a stop and drains all pending messages, so no in-flight record is
+// lost.
 class async_logger final : public logger {
 public:
   explicit async_logger(std::string name,
@@ -45,21 +46,20 @@ public:
   void flush() override {
     std::promise<void> p;
     auto f = p.get_future();
-    queue_.enqueue(async_msg{async_msg::kind::flush, 0, std::string{}, &p});
+    queue_.enqueue(async_msg{async_msg::kind::flush, 0, log_msg{}, &p});
     f.wait();
   }
 
 protected:
-  void sink_it_(std::size_t sink_index, std::string&& line) override {
-    queue_.enqueue(
-        async_msg{async_msg::kind::log, sink_index, std::move(line), nullptr});
+  void sink_it_(std::size_t sink_index, const log_msg& msg) override {
+    queue_.enqueue(async_msg{async_msg::kind::log, sink_index, msg, nullptr});
   }
 
 private:
   void process(async_msg& m) {
     if (m.k == async_msg::kind::log) {
       if (m.sink_index < sinks_.size()) {
-        sinks_[m.sink_index]->write(m.payload);
+        sinks_[m.sink_index]->write(m.msg);
       }
     } else {
       for (auto& s : sinks_) {

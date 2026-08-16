@@ -18,11 +18,6 @@ public:
     refresh_color();
   }
 
-  void write(const std::string& payload) override {
-    std::lock_guard<std::mutex> lock(mutex_);
-    std::fwrite(payload.data(), 1, payload.size(), file());
-  }
-
   void flush() override {
     std::lock_guard<std::mutex> lock(mutex_);
     std::fflush(file());
@@ -34,6 +29,12 @@ public:
       color_mode_ = mode;
     }
     refresh_color();
+  }
+
+protected:
+  void write_output(const std::string& line) override {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::fwrite(line.data(), 1, line.size(), file());
   }
 
 private:

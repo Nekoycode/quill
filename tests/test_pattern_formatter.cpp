@@ -61,3 +61,24 @@ TEST_CASE("pattern formatter renders padded time fields") {
   CHECK(out[13] == ':');
   CHECK(out[16] == ':');
 }
+
+TEST_CASE("unknown pattern flag is preserved literally") {
+  quill::pattern_formatter pf("%q %v");
+  std::string out;
+  pf.format(make_msg(quill::level::info, "x"), out);
+  CHECK(out == "%q x");
+}
+
+TEST_CASE("trailing percent is literal") {
+  quill::pattern_formatter pf("%v%");
+  std::string out;
+  pf.format(make_msg(quill::level::info, "x"), out);
+  CHECK(out == "x%");
+}
+
+TEST_CASE("empty pattern yields empty output") {
+  quill::pattern_formatter pf("");
+  std::string out;
+  pf.format(make_msg(quill::level::info, "x"), out);
+  CHECK(out.empty());
+}

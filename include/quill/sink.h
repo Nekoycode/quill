@@ -7,14 +7,18 @@
 
 #include <quill/formatter.h>
 #include <quill/level.h>
+#include <quill/log_msg.h>
 #include <quill/pattern_formatter.h>
 
 namespace quill::sinks {
 
-// Base class for all sinks. A sink owns a formatter and a level, and is
-// responsible for writing a fully-formatted line and flushing buffered output.
-// Implementations must be thread-safe: `write`/`flush` may be called from
-// multiple threads (the protected `mutex_` is provided for that purpose).
+// Base class for all sinks. A sink owns a formatter and a level and is
+// responsible for turning a structured `log_msg` into output.
+//
+// The default `write` applies the pattern formatter and forwards the resulting
+// line to `write_output`. Structured sinks (e.g. json_sink) override `write`
+// and serialize the record themselves. Implementations must be thread-safe:
+// `write`/`flush` may be called from multiple threads.
 class sink {
 public:
   sink() : formatter_(std::make_unique<pattern_formatter>()) {}
@@ -25,7 +29,15 @@ public:
   sink(const sink&) = delete;
   sink& operator=(const sink&) = delete;
 
-  virtual void write(const std::string& payload) = 0;
+  // Entry point. `msg.payload` holds the pre-formatted message text (`%v`).
+  virtual void write(const log_msg& msg) {
+    std::string line;
+    line.reserve(msg.payload.size() + 64);
+    formatter_->format(msg, line);
+    line.push_back('\n');
+    write_output(line);
+  }
+
   virtual void flush() = 0;
 
   void set_level(quill::level lvl) noexcept { level_ = lvl; }
@@ -58,6 +70,9 @@ public:
   const quill::formatter& formatter() const noexcept { return *formatter_; }
 
 protected:
+  // Raw I/O: writes an already-formatted line to the sink's destination.
+  virtual void write_output(const std::string& line) = 0;
+
   mutable std::mutex mutex_;
   std::unique_ptr<quill::formatter> formatter_;
   quill::level level_{quill::level::trace};
