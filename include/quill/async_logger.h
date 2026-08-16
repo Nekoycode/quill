@@ -35,7 +35,7 @@ public:
                         std::vector<std::shared_ptr<sinks::sink>> sinks,
                         std::size_t queue_size = 4096)
       : logger(std::move(name), std::move(sinks)), queue_(queue_size),
-        backend_thread_(&async_logger::backend_loop, this) {}
+        backend_thread_([this](std::stop_token st) { backend_loop(st); }) {}
 
   ~async_logger() override {
     backend_thread_.request_stop();

@@ -72,6 +72,12 @@ else()
   target_link_libraries(quill INTERFACE fmt::fmt)
 endif()
 
+# quill uses a few POSIX facilities (thread-safe local time, process id, tty
+# detection). Expose them even under a strict `-std=c++20` build.
+if(NOT WIN32)
+  target_compile_definitions(quill INTERFACE _POSIX_C_SOURCE=200809L)
+endif()
+
 # ---------------------------------------------------------------------------
 # Tests / examples
 # ---------------------------------------------------------------------------

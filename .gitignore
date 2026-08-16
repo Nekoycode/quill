@@ -27,6 +27,11 @@ __pycache__/
 # Runtime artifacts (examples, benchmarks)
 *.log
 
+# Temporary sandbox deploy key (never commit)
+.deploy_key
+.deploy_key.pub
+.known_hosts
+
 # Packaging
 *.tar.gz
 *.zip
