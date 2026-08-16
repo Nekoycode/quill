@@ -11,9 +11,11 @@ integration and no runtime dependency by default.
 
 `logger`/`sink`/`pattern_formatter`/`level`/`registry` and the
 `QUILL_LOGGER_*` macros deliberately mirror spdlog so that prior spdlog
-experience transfers. The async *engine* differs: quill defers the pattern
-formatting to the backend thread and uses a bounded lock-free queue, so the hot
-path is lighter than spdlog's frontend-formatting async model.
+experience transfers. The async *engine* differs: quill defers the message
+formatting to the backend thread — the hot path captures the format string and
+arguments (type-erased, owning) into a `detail::deferred_message` instead of
+formatting — and uses a bounded lock-free queue, unlike spdlog's
+frontend-formatting async model.
 
 ## 3. Structured `log_msg` reaches the sink
 
@@ -46,6 +48,8 @@ CI, and sanitizers; tests are `doctest` + CTest.
 ## 7. Non-goals (for now)
 
 - A `mcpp.toml` dual-build entry (mcpp is module-first and early-stage; deferred).
-- Zero-allocation in-place argument serialization in the async path (the
-  current type-erased `log_msg` still formats the `%v` text on the frontend).
+- Zero-allocation in-place argument serialization in the async path. The
+  current `detail::deferred_message` defers formatting but allocates one
+  heap object per record (type-erased tuple); zero-alloc transit buffers would
+  make the hot path allocation-free, at significant complexity.
 - A compiled (non-header-only) library variant.

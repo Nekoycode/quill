@@ -4,8 +4,9 @@ A lightweight, highly-customizable and thread-safe C++20 logging library.
 
 `quill` combines an **spdlog-like architecture** (logger → sinks → pattern
 formatter → level → registry) with a **frontend/backend async design** for
-reliable concurrent use: the hot path only formats, while a background thread
-performs the actual I/O through a bounded lock-free queue.
+reliable concurrent use: the hot path only captures arguments, while a
+background thread formats and performs the I/O through a bounded lock-free
+queue (deferred formatting, unlike spdlog's frontend-formatting async model).
 
 ## Highlights
 
@@ -16,7 +17,7 @@ performs the actual I/O through a bounded lock-free queue.
   and a global registry feel familiar to spdlog users.
 - **Reliable concurrency** — an async logger with a bounded lock-free MPMC
   queue and a background writer thread; graceful shutdown drains all pending
-  messages.
+  messages. The frontend only captures arguments (deferred formatting).
 - **Backtrace** — keep the last N records in a ring buffer and replay them after
   an error (`enable_backtrace` / `dump_backtrace`).
 - **Structured logging** — a `json_sink` that emits one JSON object per record.
@@ -57,7 +58,7 @@ ctest  --preset dev         # run tests
 ```
 
 Available configure presets: `dev`, `debug`, `release`, `relwithdebinfo`,
-`bench`, `ci`, `asan`, `tsan`.
+`bench`, `ci`, `asan`, `tsan`, `coverage`.
 
 ### Consuming from another CMake project
 
@@ -72,10 +73,16 @@ target_link_libraries(my_app PRIVATE quill::quill)
   `cmake --build . --target check-format` (verify), using `.clang-format`.
 - **Static analysis** — configure with `-DQUILL_ENABLE_CLANG_TIDY=ON` to run
   `clang-tidy` (see `.clang-tidy`) during compilation.
+- **Coverage** — `cmake --preset coverage && cmake --build --preset coverage &&
+  ctest --preset coverage`, then capture with `lcov`/`gcovr` (see CI job).
 - **API docs** — `cmake --build . --target docs` (requires Doxygen; see
   `Doxyfile`).
 - **Design notes** — see [`docs/architecture.md`](docs/architecture.md) and
   [`docs/design-decisions.md`](docs/design-decisions.md).
+
+The `CI` workflow (manual dispatch) runs the cross-platform build/test matrix,
+sanitizers, fmt fallback, plus `check-format`, `clang-tidy` and `coverage` as
+quality gates.
 
 ## Benchmarks
 

@@ -10,6 +10,7 @@
 
 #include <quill/common.h>
 #include <quill/detail/circular_buffer.h>
+#include <quill/detail/deferred_message.h>
 #include <quill/detail/format.h>
 #include <quill/detail/os.h>
 #include <quill/level.h>
@@ -27,8 +28,7 @@ namespace quill {
 // non-macro use and record an empty source location, mirroring spdlog.
 //
 // `logger` is the synchronous implementation: each call formats and writes
-// inline. `async_logger` overrides the write path to hand work to a background
-// thread.
+// inline. `async_logger` defers the formatting to a background thread.
 class logger {
 public:
   explicit logger(std::string name, std::vector<std::shared_ptr<sinks::sink>> sinks)
@@ -47,16 +47,57 @@ public:
 
   template <typename... Args>
   void log(source_loc loc, quill::level lvl, detail::format_string_t<Args...> fmt, Args&&... args) {
-    log_formatted(lvl, detail::format(fmt, std::forward<Args>(args)...), loc);
+    if (!should_log(lvl)) {
+      return;
+    }
+
+    log_msg meta = make_meta(lvl, loc);
+
+    if (defers_formatting_) {
+      // Deferred: capture the arguments without formatting; the backend formats.
+      const auto sv = fmt.get();
+      auto deferred = detail::make_deferred_message(std::string_view(sv.data(), sv.size()),
+                                                    std::forward<Args>(args)...);
+
+      if (backtrace_enabled_.load(std::memory_order_relaxed)) {
+        // Backtrace is a diagnostic feature: format now just for the capture.
+        std::string text;
+        deferred->format_into(text);
+        log_msg bm = meta;
+        bm.payload = std::move(text);
+        push_backtrace(bm);
+      }
+      log_meta(std::move(meta), std::move(deferred));
+    } else {
+      meta.payload = detail::format(fmt, std::forward<Args>(args)...);
+      push_backtrace(meta);
+      log_meta(std::move(meta), nullptr);
+    }
+
+    flush_if_needed(lvl);
   }
 
   template <typename... Args>
   void log_runtime(quill::level lvl, std::string_view fmt, Args&&... args) {
-    log_formatted(lvl, detail::vformat(fmt, detail::make_format_args(args...)), source_loc{});
+    if (!should_log(lvl)) {
+      return;
+    }
+    log_msg meta = make_meta(lvl, source_loc{});
+    meta.payload = detail::vformat(fmt, detail::make_format_args(args...));
+    push_backtrace(meta);
+    log_meta(std::move(meta), nullptr);
+    flush_if_needed(lvl);
   }
 
   void log_raw(quill::level lvl, std::string_view message) {
-    log_formatted(lvl, std::string(message), source_loc{});
+    if (!should_log(lvl)) {
+      return;
+    }
+    log_msg meta = make_meta(lvl, source_loc{});
+    meta.payload = std::string(message);
+    push_backtrace(meta);
+    log_meta(std::move(meta), nullptr);
+    flush_if_needed(lvl);
   }
 
   template <typename... Args> void trace(detail::format_string_t<Args...> fmt, Args&&... args) {
@@ -150,12 +191,18 @@ public:
   std::vector<std::shared_ptr<sinks::sink>>& sinks() noexcept { return sinks_; }
 
 protected:
-  // Write path. The default implementation writes synchronously; async_logger
-  // overrides it to enqueue the record.
-  virtual void sink_it_(std::size_t sink_index, const log_msg& msg) {
-    if (sink_index < sinks_.size()) {
-      sinks_[sink_index]->write(msg);
+  logger(std::string name, std::vector<std::shared_ptr<sinks::sink>> sinks, bool defers_formatting)
+      : name_(std::move(name)), sinks_(std::move(sinks)), defers_formatting_(defers_formatting) {}
+
+  // Dispatch point. The default formats `deferred` (if any) and writes
+  // synchronously; async_logger overrides it to enqueue the record.
+  virtual void log_meta(log_msg&& meta, detail::deferred_message_ptr deferred) {
+    if (deferred) {
+      std::string text;
+      deferred->format_into(text);
+      meta.payload = std::move(text);
     }
+    write_record(meta);
   }
 
   std::string name_;
@@ -164,37 +211,41 @@ protected:
   std::atomic<quill::level> flush_level_{quill::level::off};
 
 private:
-  void log_formatted(quill::level lvl, std::string message_text, source_loc loc) {
-    if (!should_log(lvl)) {
-      return;
-    }
-
+  log_msg make_meta(quill::level lvl, source_loc loc) const {
     log_msg meta;
     meta.lvl = lvl;
     meta.time = std::chrono::system_clock::now();
     meta.logger_name = name_;
     meta.thread_id = detail::get_thread_id();
     meta.loc = loc;
-    meta.payload = std::move(message_text);
+    return meta;
+  }
 
-    for (std::size_t i = 0; i < sinks_.size(); ++i) {
-      if (sinks_[i]->should_log(lvl)) {
-        sink_it_(i, meta);
+  void write_record(const log_msg& meta) {
+    for (auto& s : sinks_) {
+      if (s->should_log(meta.lvl)) {
+        s->write(meta);
       }
     }
+  }
 
-    if (backtrace_enabled_.load(std::memory_order_relaxed)) {
-      std::lock_guard<std::mutex> lock(backtrace_mutex_);
-      if (backtrace_) {
-        backtrace_->push(meta);
-      }
+  void push_backtrace(const log_msg& meta) {
+    if (!backtrace_enabled_.load(std::memory_order_relaxed)) {
+      return;
     }
+    std::lock_guard<std::mutex> lock(backtrace_mutex_);
+    if (backtrace_) {
+      backtrace_->push(meta);
+    }
+  }
 
+  void flush_if_needed(quill::level lvl) {
     if (lvl >= flush_level_.load(std::memory_order_relaxed)) {
       flush();
     }
   }
 
+  const bool defers_formatting_{false};
   std::atomic<bool> backtrace_enabled_{false};
   std::mutex backtrace_mutex_;
   std::unique_ptr<detail::circular_buffer<log_msg>> backtrace_;

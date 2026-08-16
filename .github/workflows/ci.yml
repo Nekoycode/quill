@@ -84,3 +84,71 @@ jobs:
 
       - name: Test
         run: ctest --preset ${{ matrix.preset }}
+
+  check-format:
+    name: check-format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+
+      - name: Configure
+        run: cmake -S . -B build-format -G Ninja -DQUILL_BUILD_TESTS=OFF -DQUILL_BUILD_EXAMPLES=OFF
+
+      - name: Check formatting
+        run: cmake --build build-format --target check-format
+
+  clang-tidy:
+    name: clang-tidy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-tidy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy
+
+      - name: Configure (warnings as errors)
+        run: >
+          cmake -S . -B build-tidy -G Ninja
+          -DQUILL_BUILD_TESTS=ON
+          -DCMAKE_CXX_CLANG_TIDY="clang-tidy;-warnings-as-errors=*"
+
+      - name: Build
+        run: cmake --build build-tidy
+
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lcov
+
+      - name: Configure
+        run: cmake --preset coverage
+
+      - name: Build
+        run: cmake --build --preset coverage
+
+      - name: Test
+        run: ctest --preset coverage
+
+      - name: Capture coverage
+        run: |
+          lcov --capture --directory build/coverage --output-file coverage.info
+          lcov --remove coverage.info '*/_deps/*' '*/tests/*' '*/examples/*' '*/benchmarks/*' -o coverage.info
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.info

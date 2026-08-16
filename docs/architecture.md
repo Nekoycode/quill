@@ -23,9 +23,11 @@ pattern, backtrace). The logging macros (`QUILL_LOGGER_*`) resolve to
 site via `std::source_location::current()`.
 
 The synchronous path formats the message text (`%v`) on the calling thread and
-hands the structured record to each sink. `async_logger` overrides the write
-path to enqueue the record; its backend thread applies each sink's formatter
-and performs the write.
+hands the structured record to each sink. `async_logger` defers formatting: the
+calling thread captures the format string and arguments (type-erased, owning)
+into a `detail::deferred_message` and enqueues it; the backend thread formats
+the `%v` text and writes. This is the key architectural difference from spdlog,
+whose async logger formats on the calling thread.
 
 ### 2. `sinks::sink`
 
@@ -59,10 +61,10 @@ providing `get`/`create`/`drop`, a default logger, and `flush_all`/`shutdown`.
 
 `async_logger` owns a `detail::blocking_queue` (a bounded lock-free MPMC ring
 buffer — Dmitry Vyukov's algorithm — wrapped with condition-variable
-backpressure) and a `std::jthread` backend. The frontend only formats the
-message text and enqueues the record; the backend formats per sink and writes.
-Destruction requests a stop and drains all pending records, so no in-flight
-message is lost.
+backpressure) and a `std::jthread` backend. The frontend captures the message
+(format string + arguments) without formatting; the backend formats the `%v`
+text and applies each sink's formatter before writing. Destruction requests a
+stop and drains all pending records, so no in-flight message is lost.
 
 ## Threading model
 
