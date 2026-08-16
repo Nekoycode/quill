@@ -58,6 +58,18 @@
       }
     },
     {
+      "name": "bench",
+      "inherits": "base",
+      "displayName": "Benchmark (Release)",
+      "description": "Release build with only benchmarks enabled (no dependency fetch).",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "QUILL_BUILD_TESTS": "OFF",
+        "QUILL_BUILD_EXAMPLES": "OFF",
+        "QUILL_BUILD_BENCHMARKS": "ON"
+      }
+    },
+    {
       "name": "ci",
       "inherits": "base",
       "displayName": "CI",
@@ -92,6 +104,7 @@
     { "name": "debug", "configurePreset": "debug" },
     { "name": "release", "configurePreset": "release" },
     { "name": "relwithdebinfo", "configurePreset": "relwithdebinfo" },
+    { "name": "bench", "configurePreset": "bench" },
     { "name": "ci", "configurePreset": "ci" },
     { "name": "asan", "configurePreset": "asan" },
     { "name": "tsan", "configurePreset": "tsan" }

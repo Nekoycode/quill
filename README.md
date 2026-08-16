@@ -63,6 +63,26 @@ find_package(quill CONFIG REQUIRED)
 target_link_libraries(my_app PRIVATE quill::quill)
 ```
 
+## Benchmarks
+
+Self-contained micro-benchmarks (`std::chrono`, no external dependency) live in
+`benchmarks/`. Build and run them with the Release-based preset:
+
+```bash
+cmake --preset bench
+cmake --build --preset bench
+./build/bench/benchmarks/bench_logger   # sync / filtered / async / async-mt
+./build/bench/benchmarks/bench_queue    # MPMC queue micro-benchmark
+```
+
+Each binary accepts an optional iteration count, e.g.
+`./build/bench/benchmarks/bench_logger 5000000`.
+
+> Note: with a null sink, the async logger shows a higher per-op cost than the
+> synchronous one because it pays for queue + thread handoff with no I/O to
+> hide it behind. Async wins once the sink performs real I/O (the backend
+> writes off the hot path).
+
 ## Layout
 
 ```

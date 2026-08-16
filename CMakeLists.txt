@@ -27,6 +27,7 @@ include(CompilerWarnings)
 option(QUILL_USE_STD_FORMAT "Use std::format (C++20) instead of the fmt library" ON)
 option(QUILL_BUILD_TESTS "Build unit tests" ${PROJECT_IS_TOP_LEVEL})
 option(QUILL_BUILD_EXAMPLES "Build examples" ${PROJECT_IS_TOP_LEVEL})
+option(QUILL_BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(QUILL_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 
 # ---------------------------------------------------------------------------
@@ -93,6 +94,10 @@ endif()
 
 if(QUILL_BUILD_EXAMPLES)
   add_subdirectory(examples)
+endif()
+
+if(QUILL_BUILD_BENCHMARKS)
+  add_subdirectory(benchmarks)
 endif()
 
 # ---------------------------------------------------------------------------
