@@ -1,44 +1,39 @@
 # quill
 
+[English](README.md) · [简体中文](README.zh-CN.md)
+
 A lightweight, highly-customizable and thread-safe C++20 logging library.
 
-`quill` combines an **spdlog-like architecture** (logger → sinks → pattern
-formatter → level → registry) with a **frontend/backend async design** for
-reliable concurrent use: the hot path only captures arguments, while a
-background thread formats and performs the I/O through a bounded lock-free
-queue (deferred formatting, unlike spdlog's frontend-formatting async model).
+`quill` combines an **spdlog-like API** (logger → sinks → pattern formatter →
+level → registry) with a **frontend/backend async engine**: the hot path only
+captures arguments (allocation-free), while a background thread pool formats
+and performs the I/O. This deferred formatting makes the async path ~3× faster
+than spdlog's frontend-formatting async logger.
+
+---
 
 ## Highlights
 
 - **Header-only, zero mandatory dependencies** — built on the C++20 standard
   library (`std::format`, `std::chrono`, `std::source_location`,
   `std::jthread`, `std::stop_token`).
-- **Lightweight runtime footprint** — the async hot path is allocation-free
-  (small-buffer-optimized argument capture) and queue records are compact
-  (`async_msg` is 176 bytes; a 4096-entry queue is ~0.7 MB).
-- **spdlog-like API** — `logger`, `sinks`, pattern formatter, level filtering
-  and a global registry feel familiar to spdlog users.
-- **Reliable concurrency** — an async logger with a bounded lock-free MPMC
-  queue and a background writer thread; graceful shutdown drains all pending
-  messages. The frontend only captures arguments (deferred formatting).
-- **Backtrace** — keep the last N records in a ring buffer and replay them after
-  an error (`enable_backtrace` / `dump_backtrace`).
-- **Structured logging** — a `json_sink` that emits one JSON object per record.
-- **Compile-time format string checking** and **compile-time level gating**
-  (`QUILL_ACTIVE_LEVEL`).
-- **Highly customizable** — custom sinks, custom formatters, custom pattern
-  flags, per-sink levels/patterns.
-- **Built-in sinks** — console (auto color), basic file, rolling file
-  (size-based, `max_files`), daily file, null, and JSON.
-- **Modern CMake** — target-based build, CMake presets for local builds and CI,
-  install/export with `find_package(quill CONFIG)` support.
+- **spdlog-like API** — familiar `logger`, `sinks`, pattern formatter, level
+  filtering and a global registry.
+- **Reliable concurrency** — a bounded lock-free MPMC queue feeding a
+  configurable backend thread pool; graceful shutdown drains pending records.
+- **Allocation-free async hot path** — arguments are captured into a
+  small-buffer-optimized holder (no heap allocation for the common case).
+- **Compile-time safety** — format strings are checked at compile time, and
+  `QUILL_ACTIVE_LEVEL` removes disabled statements entirely.
+- **Structured logging** — a `json_sink` emits one JSON object per record.
+- **Backtrace** — keep the last N records and replay them after an error.
+- **Modern CMake** — target-based build, CMake presets, and install/export
+  with `find_package(quill CONFIG)`.
 
 ## Requirements
 
-- C++20 compiler (GCC ≥ 13, Clang ≥ 15, MSVC ≥ 19.29).
-- CMake ≥ 3.25.
-- [Ninja](https://ninja-build.org/) (recommended generator; presets default to
-  it).
+- C++20 compiler: GCC ≥ 13, Clang ≥ 15, MSVC ≥ 19.29.
+- CMake ≥ 3.25 and [Ninja](https://ninja-build.org/) (recommended generator).
 
 ## Quick start
 
@@ -47,52 +42,167 @@ queue (deferred formatting, unlike spdlog's frontend-formatting async model).
 
 int main() {
   auto logger = quill::stdout_logger("app");
-  logger->set_pattern("%^[%H:%M:%S.%e] [%l] %v%$");
+  logger->set_pattern("%^[%H:%M:%S.%e] [%l] [%n] %v%$");
 
   QUILL_INFO(logger, "hello {}!", "world");
+  QUILL_WARN(logger, "the answer is {}", 42);
   return 0;
 }
 ```
 
-### Building with CMake presets
-
 ```bash
-cmake --preset dev          # configure (Debug + tests + examples + -Werror)
-cmake --build --preset dev  # build
-ctest  --preset dev         # run tests
+cmake --preset dev
+cmake --build --preset dev
+./build/dev/examples/quill_basic
 ```
 
-Available configure presets: `dev`, `debug`, `release`, `relwithdebinfo`,
-`bench`, `ci`, `asan`, `tsan`, `coverage`.
+## Logging
 
-### Consuming from another CMake project
+### Macros
+
+The `QUILL_LOGGER_*` macros take a logger; the `QUILL_*` macros use the default
+logger (created lazily):
+
+```cpp
+QUILL_LOGGER_TRACE(logger, "trace");      // named logger
+QUILL_LOGGER_DEBUG(logger, "x = {}", 1);
+QUILL_LOGGER_INFO(logger, "info");
+QUILL_LOGGER_WARN(logger, "warn");
+QUILL_LOGGER_ERROR(logger, "error");
+QUILL_LOGGER_CRITICAL(logger, "critical");
+
+QUILL_INFO("default logger");             // default logger
+```
+
+The source location is captured at the call site via
+`std::source_location::current()`.
+
+### Levels and filtering
+
+```cpp
+logger->set_level(quill::level::warn);   // runtime filter (per logger)
+```
+
+To compile out a level entirely, define `QUILL_ACTIVE_LEVEL` before including
+quill (e.g. `-DQUILL_ACTIVE_LEVEL=QUILL_LEVEL_WARN`); statements below that
+level are removed at the preprocessor stage.
+
+### Pattern formatting
+
+Configure the output with `set_pattern`. Supported flags:
+
+| Flag | Meaning | Flag | Meaning |
+|---|---|---|---|
+| `%Y` `%m` `%d` | year / month / day | `%H` `%M` `%S` | hour / minute / second |
+| `%b` `%a` | month / weekday short name | `%e` `%f` | milliseconds / microseconds |
+| `%l` `%L` | level short / full | `%n` | logger name |
+| `%t` `%P` | thread id / process id | `%v` | message text |
+| `%s` | source `file:line` | `%g` `%#` `%!` | file / line / function |
+| `%^` `%$` | start / end color | `%%` | literal `%` |
+
+### Runtime format strings
+
+`log`/`trace`/... use compile-time-checked format strings. For runtime strings
+use `log_runtime` (formats with `std::vformat`) or `log_raw` (pre-formatted
+message).
+
+## Sinks
+
+| Sink | Description |
+|---|---|
+| `console_sink` | stdout/stderr, automatic ANSI color (TTY-aware) |
+| `basic_file_sink` | append to a single file (optionally truncate) |
+| `rolling_file_sink` | size-based rolling; keeps `max_files` backups (`rotating_file_sink` alias) |
+| `daily_file_sink` | one file per day, rolls at a configurable time |
+| `null_sink` | discards everything (benchmarks) |
+| `json_sink` | one JSON object per record |
+
+```cpp
+// one sink
+auto logger = quill::file_logger("app", "app.log");
+
+// several sinks
+auto logger = quill::create_logger(
+    "multi", quill::stdout_sink(),
+    quill::rolling_file_sink("app.log", /*max_size=*/1024 * 1024,
+                             /*max_files=*/5));
+```
+
+### Custom sinks
+
+Subclass `quill::sinks::sink` and implement `flush()` plus the protected
+`write_output(std::string_view)` (or override `write()` for structured output):
+
+```cpp
+class my_sink final : public quill::sinks::sink {
+public:
+  void flush() override {}
+
+protected:
+  void write_output(std::string_view line) override {
+    std::fwrite(line.data(), 1, line.size(), stdout);
+  }
+};
+```
+
+## Async logging
+
+```cpp
+// queue size + number of backend threads
+auto logger =
+    quill::create_async_logger("async", /*queue_size=*/65536,
+                               /*backend_threads=*/4, quill::basic_file_sink("app.log"));
+
+QUILL_LOGGER_INFO(logger, "this formats and writes on a background thread");
+logger->flush();
+```
+
+The frontend captures arguments without formatting (allocation-free for the
+common case); backend threads format and write. With more than one backend
+thread, records are not strictly FIFO ordered. Shutdown drains all pending
+records.
+
+## Backtrace
+
+```cpp
+logger->enable_backtrace(32);
+// ... log normally ...
+logger->dump_backtrace();   // replay the last 32 records
+logger->disable_backtrace();
+```
+
+## JSON logging
+
+```cpp
+auto logger = quill::create_logger("json", quill::json_sink("app.json"));
+QUILL_LOGGER_INFO(logger, "user {} logged in", "alice");
+// {"time":"2026-08-16T10:30:00.123","level":"info","logger":"json",...}
+```
+
+## Building
+
+```bash
+cmake --preset dev            # configure (Debug + tests + examples + -Werror)
+cmake --build --preset dev
+ctest  --preset dev           # run tests
+```
+
+Configure presets: `dev`, `debug`, `release`, `relwithdebinfo`, `bench`, `ci`,
+`asan`, `tsan`, `coverage`.
+
+## Consuming from another CMake project
 
 ```cmake
 find_package(quill CONFIG REQUIRED)
 target_link_libraries(my_app PRIVATE quill::quill)
 ```
 
-## Development
-
-- **Format** — `cmake --build . --target format` (apply) and
-  `cmake --build . --target check-format` (verify), using `.clang-format`.
-- **Static analysis** — configure with `-DQUILL_ENABLE_CLANG_TIDY=ON` to run
-  `clang-tidy` (see `.clang-tidy`) during compilation.
-- **Coverage** — `cmake --preset coverage && cmake --build --preset coverage &&
-  ctest --preset coverage`, then capture with `lcov`/`gcovr` (see CI job).
-- **API docs** — `cmake --build . --target docs` (requires Doxygen; see
-  `Doxyfile`).
-- **Design notes** — see [`docs/architecture.md`](docs/architecture.md) and
-  [`docs/design-decisions.md`](docs/design-decisions.md).
-
-The `CI` workflow (manual dispatch) runs the cross-platform build/test matrix,
-sanitizers, fmt fallback, plus `check-format`, `clang-tidy` and `coverage` as
-quality gates.
+Or via FetchContent / `add_subdirectory` — `quill::quill` is an INTERFACE
+(header-only) target.
 
 ## Benchmarks
 
-Self-contained micro-benchmarks (`std::chrono`, no external dependency) live in
-`benchmarks/`. Build and run them with the Release-based preset:
+Self-contained micro-benchmarks live in `benchmarks/`:
 
 ```bash
 cmake --preset bench
@@ -101,11 +211,7 @@ cmake --build --preset bench
 ./build/bench/benchmarks/bench_queue    # MPMC queue micro-benchmark
 ```
 
-Each binary accepts an optional iteration count, e.g.
-`./build/bench/benchmarks/bench_logger 5000000`.
-
-An optional spdlog comparison benchmark is available when spdlog is installed
-(`sudo apt install libspdlog-dev`):
+An optional spdlog comparison (`sudo apt install libspdlog-dev`):
 
 ```bash
 cmake --preset bench -DQUILL_BUILD_SPDLOG_BENCH=ON
@@ -121,16 +227,19 @@ Representative numbers (500k iterations, Release, null sink, gcc 15):
 | async (1 producer) → null | 101 ns/op | 324 ns/op |
 | async (4 producers) → null | 183 ns/op | 544 ns/op |
 
-The async path — quill's differentiator (deferred formatting + allocation-free
-frontend + backend thread pool) — is ~3× faster than spdlog's frontend-formatting
-async logger; the synchronous path is close but slightly behind.
+## Development
 
-> Note: with a null sink, the async logger shows a higher per-op cost than the
-> synchronous one because it pays for queue + thread handoff with no I/O to
-> hide it behind. Async wins once the sink performs real I/O (the backend
-> writes off the hot path).
+- **Format** — `cmake --build . --target format` (apply) /
+  `check-format` (verify), using `.clang-format`.
+- **Static analysis** — `-DQUILL_ENABLE_CLANG_TIDY=ON` (see `.clang-tidy`).
+- **Coverage** — `cmake --preset coverage && cmake --build --preset coverage &&
+  ctest --preset coverage`, then capture with `lcov`.
+- **API docs** — `cmake --build . --target docs` (requires Doxygen).
 
-## Layout
+The `CI` workflow (manual dispatch) runs the 3-platform build/test matrix,
+sanitizers, fmt fallback, and `check-format`/`clang-tidy`/`coverage` gates.
+
+## Project layout
 
 ```
 include/quill/    public headers (header-only library)
@@ -142,11 +251,16 @@ cmake/            CMake helpers and package-config template
 .github/workflows CI (GitHub Actions, preset-driven)
 ```
 
-## License
+## Documentation
 
-[MIT](LICENSE)
+- [`docs/architecture.md`](docs/architecture.md) — layers and threading model.
+- [`docs/design-decisions.md`](docs/design-decisions.md) — rationale and non-goals.
 
 ## Versioning
 
 This project follows [Semantic Versioning](https://semver.org/). Changes are
 tracked in [CHANGELOG.md](CHANGELOG.md); releases are tagged `vX.Y.Z`.
+
+## License
+
+[MIT](LICENSE)
