@@ -74,8 +74,13 @@ endif()
 
 # quill uses a few POSIX facilities (thread-safe local time, process id, tty
 # detection). Expose them even under a strict `-std=c++20` build.
+#   - Linux/BSD: _POSIX_C_SOURCE=200809L
+#   - macOS:     _DARWIN_C_SOURCE (defining _POSIX_C_SOURCE alone would hide
+#                fileno(), which is gated behind __DARWIN_C_FULL)
 if(NOT WIN32)
-  target_compile_definitions(quill INTERFACE _POSIX_C_SOURCE=200809L)
+  target_compile_definitions(quill INTERFACE
+    $<$<PLATFORM_ID:Darwin>:_DARWIN_C_SOURCE>
+    $<$<NOT:$<PLATFORM_ID:Darwin>>:_POSIX_C_SOURCE=200809L>)
 endif()
 
 # ---------------------------------------------------------------------------
