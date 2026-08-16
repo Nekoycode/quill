@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -50,8 +51,13 @@ public:
   void flush() override {
     // Wait until every enqueued record has been written to its sink, then flush.
     // (A pending-record counter makes this correct across multiple backends.)
+    std::size_t spins = 0;
     while (pending_.load(std::memory_order_acquire) != 0) {
-      std::this_thread::yield();
+      if (++spins < 1000) {
+        std::this_thread::yield();
+      } else {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+      }
     }
     for (auto& s : sinks_) {
       s->flush();

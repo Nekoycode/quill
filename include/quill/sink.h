@@ -53,11 +53,12 @@ public:
   }
 
   void set_formatter(std::unique_ptr<quill::formatter> f) {
+    if (!f) {
+      return;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
     formatter_ = std::move(f);
-    if (formatter_) {
-      formatter_->set_color(color_enabled_);
-    }
+    formatter_->set_color(color_enabled_);
   }
 
   void set_pattern(std::string pattern) {

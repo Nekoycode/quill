@@ -39,8 +39,13 @@ private:
   std::FILE* file() const noexcept { return stream_ == stream::stdout_stream ? stdout : stderr; }
 
   void refresh_color() {
+    color_mode mode;
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      mode = color_mode_;
+    }
     bool enabled = false;
-    switch (color_mode_) {
+    switch (mode) {
     case color_mode::always:
       enabled = true;
       break;

@@ -26,7 +26,9 @@ public:
     return *this;
   }
 
-  small_buffer& operator+=(const char* s) { return append_impl(s, std::strlen(s)); }
+  small_buffer& operator+=(const char* s) {
+    return s != nullptr ? append_impl(s, std::strlen(s)) : *this;
+  }
 
   small_buffer& operator+=(std::string_view s) { return append_impl(s.data(), s.size()); }
 

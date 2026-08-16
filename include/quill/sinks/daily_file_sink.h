@@ -19,6 +19,9 @@ public:
   daily_file_sink(std::string base_filename, int rotation_hour = 0, int rotation_minute = 0)
       : base_filename_(std::move(base_filename)), rotation_hour_(rotation_hour),
         rotation_minute_(rotation_minute) {
+    if (rotation_hour < 0 || rotation_hour > 23 || rotation_minute < 0 || rotation_minute > 59) {
+      throw std::invalid_argument("quill: daily rotation hour/minute out of range");
+    }
     if (!open_for(today())) {
       throw std::runtime_error("quill: failed to open log file: " + base_filename_);
     }

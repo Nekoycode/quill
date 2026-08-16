@@ -17,7 +17,8 @@ namespace quill::detail {
 template <typename T> class mpmc_bounded_queue {
 public:
   explicit mpmc_bounded_queue(std::size_t capacity)
-      : capacity_(next_pow2(capacity)), mask_(capacity_ - 1), buffer_(capacity_) {
+      : capacity_(next_pow2(capacity == 0 ? 1 : capacity)), mask_(capacity_ - 1),
+        buffer_(capacity_) {
     for (std::size_t i = 0; i < capacity_; ++i) {
       buffer_[i].sequence.store(i, std::memory_order_relaxed);
     }

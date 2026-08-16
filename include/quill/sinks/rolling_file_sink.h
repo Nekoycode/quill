@@ -54,8 +54,8 @@ protected:
       rotate();
     }
     if (file_ != nullptr) {
-      std::fwrite(line.data(), 1, line.size(), file_);
-      current_size_ += line.size();
+      const std::size_t written = std::fwrite(line.data(), 1, line.size(), file_);
+      current_size_ += written;
     }
   }
 
