@@ -56,13 +56,13 @@ public:
     if (defers_formatting_) {
       // Deferred: capture the arguments without formatting; the backend formats.
       const auto sv = fmt.get();
-      auto deferred = detail::make_deferred_message(std::string_view(sv.data(), sv.size()),
-                                                    std::forward<Args>(args)...);
+      auto deferred = detail::deferred_message::make(std::string_view(sv.data(), sv.size()),
+                                                     std::forward<Args>(args)...);
 
       if (backtrace_enabled_.load(std::memory_order_relaxed)) {
         // Backtrace is a diagnostic feature: format now just for the capture.
         std::string text;
-        deferred->format_into(text);
+        deferred.format_into(text);
         log_msg bm = meta;
         bm.payload = std::move(text);
         push_backtrace(bm);
@@ -71,7 +71,7 @@ public:
     } else {
       meta.payload = detail::format(fmt, std::forward<Args>(args)...);
       push_backtrace(meta);
-      log_meta(std::move(meta), nullptr);
+      log_meta(std::move(meta), detail::deferred_message{});
     }
 
     flush_if_needed(lvl);
@@ -85,7 +85,7 @@ public:
     log_msg meta = make_meta(lvl, source_loc{});
     meta.payload = detail::vformat(fmt, detail::make_format_args(args...));
     push_backtrace(meta);
-    log_meta(std::move(meta), nullptr);
+    log_meta(std::move(meta), detail::deferred_message{});
     flush_if_needed(lvl);
   }
 
@@ -96,7 +96,7 @@ public:
     log_msg meta = make_meta(lvl, source_loc{});
     meta.payload = std::string(message);
     push_backtrace(meta);
-    log_meta(std::move(meta), nullptr);
+    log_meta(std::move(meta), detail::deferred_message{});
     flush_if_needed(lvl);
   }
 
@@ -196,10 +196,10 @@ protected:
 
   // Dispatch point. The default formats `deferred` (if any) and writes
   // synchronously; async_logger overrides it to enqueue the record.
-  virtual void log_meta(log_msg&& meta, detail::deferred_message_ptr deferred) {
-    if (deferred) {
+  virtual void log_meta(log_msg&& meta, detail::deferred_message&& deferred) {
+    if (!deferred.empty()) {
       std::string text;
-      deferred->format_into(text);
+      deferred.format_into(text);
       meta.payload = std::move(text);
     }
     write_record(meta);

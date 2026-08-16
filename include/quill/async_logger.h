@@ -21,9 +21,9 @@ struct async_msg {
   enum class kind : std::uint8_t { log, flush };
 
   kind k{kind::log};
-  log_msg msg;                           // metadata (+ payload when not deferred)
-  detail::deferred_message_ptr deferred; // set when formatting is deferred
-  std::promise<void>* sync{nullptr};     // used by flush to signal completion
+  log_msg msg;                       // metadata (+ payload when not deferred)
+  detail::deferred_message deferred; // set when formatting is deferred
+  std::promise<void>* sync{nullptr}; // used by flush to signal completion
 };
 
 // A logger whose sink writes are performed on a dedicated background thread.
@@ -45,12 +45,12 @@ public:
   void flush() override {
     std::promise<void> p;
     auto f = p.get_future();
-    queue_.enqueue(async_msg{async_msg::kind::flush, log_msg{}, nullptr, &p});
+    queue_.enqueue(async_msg{async_msg::kind::flush, log_msg{}, detail::deferred_message{}, &p});
     f.wait();
   }
 
 protected:
-  void log_meta(log_msg&& meta, detail::deferred_message_ptr deferred) override {
+  void log_meta(log_msg&& meta, detail::deferred_message&& deferred) override {
     queue_.enqueue(async_msg{async_msg::kind::log, std::move(meta), std::move(deferred), nullptr});
   }
 
@@ -66,9 +66,9 @@ private:
       return;
     }
 
-    if (m.deferred) {
+    if (!m.deferred.empty()) {
       std::string text;
-      m.deferred->format_into(text);
+      m.deferred.format_into(text);
       m.msg.payload = std::move(text);
     }
     for (auto& s : sinks_) {

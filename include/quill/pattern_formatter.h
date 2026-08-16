@@ -30,7 +30,8 @@ public:
   }
 
   void format(const log_msg& msg, std::string& out) const override {
-    const detail::tm_fields tf = detail::to_local_time(msg.time);
+    const detail::tm_fields tf =
+        has_time_flag_ ? detail::to_local_time(msg.time) : detail::tm_fields{};
     for (const auto& it : items_) {
       switch (it.f) {
       case flag::literal:
@@ -227,8 +228,28 @@ private:
     return (pos == std::string_view::npos) ? path : path.substr(pos + 1);
   }
 
+  static bool is_time_flag(flag f) {
+    switch (f) {
+    case flag::year:
+    case flag::month:
+    case flag::month_short_name:
+    case flag::day:
+    case flag::weekday_short:
+    case flag::hour_24:
+    case flag::hour_12:
+    case flag::minute:
+    case flag::second:
+    case flag::millis:
+    case flag::micros:
+      return true;
+    default:
+      return false;
+    }
+  }
+
   void compile_pattern() {
     items_.clear();
+    has_time_flag_ = false;
     std::string literal;
     auto flush_literal = [&]() {
       if (!literal.empty()) {
@@ -259,6 +280,9 @@ private:
         literal.push_back(n);
         continue;
       }
+      if (is_time_flag(f)) {
+        has_time_flag_ = true;
+      }
       flush_literal();
       items_.push_back({f, std::string(1, n)});
     }
@@ -268,6 +292,7 @@ private:
   std::string pattern_;
   std::vector<item> items_;
   bool color_enabled_{false};
+  bool has_time_flag_{false};
 };
 
 } // namespace quill
