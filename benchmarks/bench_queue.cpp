@@ -1,4 +1,4 @@
-#include <quill/detail/blocking_queue.h>
+#include <zest/detail/blocking_queue.h>
 
 #include <atomic>
 #include <chrono>
@@ -17,20 +17,20 @@ int main(int argc, char** argv) {
 
   // 1) SPSC round-trip: one enqueue + one dequeue per iteration.
   {
-    quill::detail::mpmc_bounded_queue<std::uint64_t> q(1024);
-    const double ns = quill::bench::time_per_op(iters, [&] {
+    zest::detail::mpmc_bounded_queue<std::uint64_t> q(1024);
+    const double ns = zest::bench::time_per_op(iters, [&] {
       std::uint64_t v = 1;
       while (!q.try_enqueue(std::move(v))) {
       }
       while (!q.try_dequeue(v)) {
       }
     });
-    quill::bench::report("mpmc queue SPSC round-trip", ns);
+    zest::bench::report("mpmc queue SPSC round-trip", ns);
   }
 
   // 2) MPMC throughput: four producers feeding one consumer.
   {
-    quill::detail::mpmc_bounded_queue<std::uint64_t> q(65536);
+    zest::detail::mpmc_bounded_queue<std::uint64_t> q(65536);
     constexpr int producers = 4;
     const std::size_t per = iters / producers;
 
@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
     const double ns_per_op = total_ns / static_cast<double>(per * producers);
     std::printf("consumed: %llu / %zu\n", static_cast<unsigned long long>(consumed.load()),
                 per * producers);
-    quill::bench::report("mpmc queue (4 producers + 1 consumer)", ns_per_op);
+    zest::bench::report("mpmc queue (4 producers + 1 consumer)", ns_per_op);
   }
 
   return 0;

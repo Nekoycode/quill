@@ -3,10 +3,10 @@
 #include <cstdio>
 #include <string>
 
-#include <quill/detail/os.h>
-#include <quill/sink.h>
+#include <zest/detail/os.h>
+#include <zest/sink.h>
 
-namespace quill::sinks {
+namespace zest::sinks {
 
 // Writes to stdout or stderr, optionally with ANSI color.
 class console_sink final : public sink {
@@ -66,4 +66,4 @@ private:
   color_mode color_mode_{color_mode::automatic};
 };
 
-} // namespace quill::sinks
+} // namespace zest::sinks

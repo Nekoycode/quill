@@ -5,9 +5,9 @@
 #include <string>
 #include <vector>
 
-#include <quill/detail/circular_buffer.h>
+#include <zest/detail/circular_buffer.h>
 
-namespace quill::detail {
+namespace zest::detail {
 
 // Fixed-capacity ring buffer that overwrites the oldest entry when full.
 template <typename T> class circular_buffer {
@@ -41,4 +41,4 @@ private:
   std::size_t capacity_;
 };
 
-} // namespace quill::detail
+} // namespace zest::detail

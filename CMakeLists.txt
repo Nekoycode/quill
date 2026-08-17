@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(
-  quill
+  zest
   VERSION 0.1.0
   DESCRIPTION "A lightweight, customizable, thread-safe C++20 logging library"
   LANGUAGES CXX)
@@ -24,30 +24,30 @@ include(CompilerWarnings)
 # ---------------------------------------------------------------------------
 # Options
 # ---------------------------------------------------------------------------
-option(QUILL_USE_STD_FORMAT "Use std::format (C++20) instead of the fmt library" ON)
-option(QUILL_BUILD_TESTS "Build unit tests" ${PROJECT_IS_TOP_LEVEL})
-option(QUILL_BUILD_EXAMPLES "Build examples" ${PROJECT_IS_TOP_LEVEL})
-option(QUILL_BUILD_BENCHMARKS "Build benchmarks" OFF)
-option(QUILL_BUILD_SPDLOG_BENCH "Build the spdlog comparison benchmark (requires spdlog)" OFF)
-option(QUILL_BUILD_DOCS "Enable the 'docs' target (requires Doxygen)" OFF)
-option(QUILL_ENABLE_CLANG_TIDY "Run clang-tidy during compilation" OFF)
-option(QUILL_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
+option(ZEST_USE_STD_FORMAT "Use std::format (C++20) instead of the fmt library" ON)
+option(ZEST_BUILD_TESTS "Build unit tests" ${PROJECT_IS_TOP_LEVEL})
+option(ZEST_BUILD_EXAMPLES "Build examples" ${PROJECT_IS_TOP_LEVEL})
+option(ZEST_BUILD_BENCHMARKS "Build benchmarks" OFF)
+option(ZEST_BUILD_SPDLOG_BENCH "Build the spdlog comparison benchmark (requires spdlog)" OFF)
+option(ZEST_BUILD_DOCS "Enable the 'docs' target (requires Doxygen)" OFF)
+option(ZEST_ENABLE_CLANG_TIDY "Run clang-tidy during compilation" OFF)
+option(ZEST_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 
 # Static analysis: clang-tidy must be wired into CMAKE_CXX_CLANG_TIDY before any
 # target is created for it to take effect.
-if(QUILL_ENABLE_CLANG_TIDY)
-  find_program(QUILL_CLANG_TIDY_EXE NAMES clang-tidy)
-  if(QUILL_CLANG_TIDY_EXE)
-    set(CMAKE_CXX_CLANG_TIDY "${QUILL_CLANG_TIDY_EXE}")
+if(ZEST_ENABLE_CLANG_TIDY)
+  find_program(ZEST_CLANG_TIDY_EXE NAMES clang-tidy)
+  if(ZEST_CLANG_TIDY_EXE)
+    set(CMAKE_CXX_CLANG_TIDY "${ZEST_CLANG_TIDY_EXE}")
   else()
-    message(WARNING "QUILL_ENABLE_CLANG_TIDY is ON but clang-tidy was not found")
+    message(WARNING "ZEST_ENABLE_CLANG_TIDY is ON but clang-tidy was not found")
   endif()
 endif()
 
 # ---------------------------------------------------------------------------
 # Dependencies (fetched only when needed; none are required at runtime)
 # ---------------------------------------------------------------------------
-if(NOT QUILL_USE_STD_FORMAT)
+if(NOT ZEST_USE_STD_FORMAT)
   include(FetchContent)
   FetchContent_Declare(
     fmt
@@ -57,7 +57,7 @@ if(NOT QUILL_USE_STD_FORMAT)
   FetchContent_MakeAvailable(fmt)
 endif()
 
-if(QUILL_BUILD_TESTS)
+if(ZEST_BUILD_TESTS)
   include(FetchContent)
   FetchContent_Declare(
     doctest
@@ -70,30 +70,30 @@ endif()
 # ---------------------------------------------------------------------------
 # Library target (header-only)
 # ---------------------------------------------------------------------------
-add_library(quill INTERFACE)
-add_library(quill::quill ALIAS quill)
+add_library(zest INTERFACE)
+add_library(zest::zest ALIAS zest)
 
-target_compile_features(quill INTERFACE cxx_std_20)
+target_compile_features(zest INTERFACE cxx_std_20)
 target_include_directories(
-  quill
+  zest
   INTERFACE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 
-if(QUILL_USE_STD_FORMAT)
-  target_compile_definitions(quill INTERFACE QUILL_USE_STD_FORMAT=1)
+if(ZEST_USE_STD_FORMAT)
+  target_compile_definitions(zest INTERFACE ZEST_USE_STD_FORMAT=1)
 else()
-  target_compile_definitions(quill INTERFACE QUILL_USE_STD_FORMAT=0)
-  target_link_libraries(quill INTERFACE fmt::fmt)
+  target_compile_definitions(zest INTERFACE ZEST_USE_STD_FORMAT=0)
+  target_link_libraries(zest INTERFACE fmt::fmt)
 endif()
 
-# quill uses a few POSIX facilities (thread-safe local time, process id, tty
+# zest uses a few POSIX facilities (thread-safe local time, process id, tty
 # detection). Expose them even under a strict `-std=c++20` build.
 #   - Linux/BSD: _POSIX_C_SOURCE=200809L
 #   - macOS:     _DARWIN_C_SOURCE (defining _POSIX_C_SOURCE alone would hide
 #                fileno(), which is gated behind __DARWIN_C_FULL)
 if(NOT WIN32)
-  target_compile_definitions(quill INTERFACE
+  target_compile_definitions(zest INTERFACE
     $<$<PLATFORM_ID:Darwin>:_DARWIN_C_SOURCE>
     $<$<NOT:$<PLATFORM_ID:Darwin>>:_POSIX_C_SOURCE=200809L>)
 endif()
@@ -101,25 +101,25 @@ endif()
 # ---------------------------------------------------------------------------
 # Tests / examples
 # ---------------------------------------------------------------------------
-if(QUILL_BUILD_TESTS)
+if(ZEST_BUILD_TESTS)
   enable_testing()
   add_subdirectory(tests)
 endif()
 
-if(QUILL_BUILD_EXAMPLES)
+if(ZEST_BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif()
 
-if(QUILL_BUILD_BENCHMARKS)
+if(ZEST_BUILD_BENCHMARKS)
   add_subdirectory(benchmarks)
 endif()
 
 # ---------------------------------------------------------------------------
 # Developer conveniences: clang-format and Doxygen targets (optional tools)
 # ---------------------------------------------------------------------------
-find_program(QUILL_CLANG_FORMAT_EXE NAMES clang-format)
-if(QUILL_CLANG_FORMAT_EXE)
-  file(GLOB_RECURSE QUILL_FORMAT_SOURCES CONFIGURE_DEPENDS
+find_program(ZEST_CLANG_FORMAT_EXE NAMES clang-format)
+if(ZEST_CLANG_FORMAT_EXE)
+  file(GLOB_RECURSE ZEST_FORMAT_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.h"
@@ -129,62 +129,62 @@ if(QUILL_CLANG_FORMAT_EXE)
 
   add_custom_target(
     format
-    COMMAND "${QUILL_CLANG_FORMAT_EXE}" -i ${QUILL_FORMAT_SOURCES}
+    COMMAND "${ZEST_CLANG_FORMAT_EXE}" -i ${ZEST_FORMAT_SOURCES}
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMENT "Formatting sources with clang-format")
 
   add_custom_target(
     check-format
-    COMMAND "${QUILL_CLANG_FORMAT_EXE}" --dry-run --Werror ${QUILL_FORMAT_SOURCES}
+    COMMAND "${ZEST_CLANG_FORMAT_EXE}" --dry-run --Werror ${ZEST_FORMAT_SOURCES}
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMENT "Checking formatting with clang-format")
 endif()
 
-if(QUILL_BUILD_DOCS)
-  find_program(QUILL_DOXYGEN_EXE NAMES doxygen)
-  if(QUILL_DOXYGEN_EXE)
+if(ZEST_BUILD_DOCS)
+  find_program(ZEST_DOXYGEN_EXE NAMES doxygen)
+  if(ZEST_DOXYGEN_EXE)
     add_custom_target(
       docs
-      COMMAND "${QUILL_DOXYGEN_EXE}" "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile"
+      COMMAND "${ZEST_DOXYGEN_EXE}" "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile"
       WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
       COMMENT "Generating API documentation with Doxygen")
   else()
-    message(WARNING "QUILL_BUILD_DOCS is ON but Doxygen was not found")
+    message(WARNING "ZEST_BUILD_DOCS is ON but Doxygen was not found")
   endif()
 endif()
 
 # ---------------------------------------------------------------------------
-# Install / export (find_package(quill CONFIG))
+# Install / export (find_package(zest CONFIG))
 # ---------------------------------------------------------------------------
 install(
-  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/quill"
+  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/zest"
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
-install(TARGETS quill EXPORT quillTargets)
+install(TARGETS zest EXPORT zestTargets)
 install(
-  EXPORT quillTargets
-  FILE quillTargets.cmake
-  NAMESPACE quill::
-  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/quill")
+  EXPORT zestTargets
+  FILE zestTargets.cmake
+  NAMESPACE zest::
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/zest")
 
-if(QUILL_USE_STD_FORMAT)
-  set(_QUILL_USE_STD_FORMAT 1)
+if(ZEST_USE_STD_FORMAT)
+  set(_ZEST_USE_STD_FORMAT 1)
 else()
-  set(_QUILL_USE_STD_FORMAT 0)
+  set(_ZEST_USE_STD_FORMAT 0)
 endif()
 
 configure_package_config_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/quillConfig.cmake.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/quillConfig.cmake"
-  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/quill")
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/zestConfig.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/zestConfig.cmake"
+  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/zest")
 
 write_basic_package_version_file(
-  "${CMAKE_CURRENT_BINARY_DIR}/quillConfigVersion.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/zestConfigVersion.cmake"
   VERSION "${PROJECT_VERSION}"
   COMPATIBILITY SameMajorVersion)
 
 install(
   FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/quillConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/quillConfigVersion.cmake"
-  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/quill")
+    "${CMAKE_CURRENT_BINARY_DIR}/zestConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/zestConfigVersion.cmake"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/zest")

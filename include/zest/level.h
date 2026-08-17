@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <string_view>
 
-#include <quill/common.h>
+#include <zest/common.h>
 
-namespace quill {
+namespace zest {
 
 enum class level : std::uint8_t {
   trace = 0,
@@ -18,7 +18,7 @@ enum class level : std::uint8_t {
   n_levels
 };
 
-QUILL_NODISCARD constexpr std::string_view to_string_view(level lvl) noexcept {
+ZEST_NODISCARD constexpr std::string_view to_string_view(level lvl) noexcept {
   using namespace std::string_view_literals;
   switch (lvl) {
   case level::trace:
@@ -40,7 +40,7 @@ QUILL_NODISCARD constexpr std::string_view to_string_view(level lvl) noexcept {
   }
 }
 
-QUILL_NODISCARD constexpr char short_level(level lvl) noexcept {
+ZEST_NODISCARD constexpr char short_level(level lvl) noexcept {
   switch (lvl) {
   case level::trace:
     return 'T';
@@ -62,16 +62,16 @@ QUILL_NODISCARD constexpr char short_level(level lvl) noexcept {
 // ---------------------------------------------------------------------------
 // Compile-time active level. Log statements below this level are compiled out.
 // ---------------------------------------------------------------------------
-#define QUILL_LEVEL_TRACE 0
-#define QUILL_LEVEL_DEBUG 1
-#define QUILL_LEVEL_INFO 2
-#define QUILL_LEVEL_WARN 3
-#define QUILL_LEVEL_ERROR 4
-#define QUILL_LEVEL_CRITICAL 5
-#define QUILL_LEVEL_OFF 6
+#define ZEST_LEVEL_TRACE 0
+#define ZEST_LEVEL_DEBUG 1
+#define ZEST_LEVEL_INFO 2
+#define ZEST_LEVEL_WARN 3
+#define ZEST_LEVEL_ERROR 4
+#define ZEST_LEVEL_CRITICAL 5
+#define ZEST_LEVEL_OFF 6
 
-#if !defined(QUILL_ACTIVE_LEVEL)
-#define QUILL_ACTIVE_LEVEL QUILL_LEVEL_TRACE
+#if !defined(ZEST_ACTIVE_LEVEL)
+#define ZEST_ACTIVE_LEVEL ZEST_LEVEL_TRACE
 #endif
 
-} // namespace quill
+} // namespace zest

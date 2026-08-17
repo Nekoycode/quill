@@ -7,12 +7,12 @@
 #include <string_view>
 #include <utility>
 
-#include <quill/formatter.h>
-#include <quill/level.h>
-#include <quill/log_msg.h>
-#include <quill/pattern_formatter.h>
+#include <zest/formatter.h>
+#include <zest/level.h>
+#include <zest/log_msg.h>
+#include <zest/pattern_formatter.h>
 
-namespace quill::sinks {
+namespace zest::sinks {
 
 // Base class for all sinks. A sink owns a formatter and a level and is
 // responsible for turning a structured `log_msg` into output.
@@ -24,7 +24,7 @@ namespace quill::sinks {
 class sink {
 public:
   sink() : formatter_(std::make_unique<pattern_formatter>()) {}
-  explicit sink(std::unique_ptr<quill::formatter> f) : formatter_(std::move(f)) {}
+  explicit sink(std::unique_ptr<zest::formatter> f) : formatter_(std::move(f)) {}
 
   virtual ~sink() = default;
 
@@ -33,7 +33,7 @@ public:
 
   // Entry point. `msg.payload` holds the pre-formatted message text (`%v`).
   virtual void write(const log_msg& msg) {
-    quill::format_buffer line;
+    zest::format_buffer line;
     {
       // Hold the mutex while reading/using formatter_, which set_formatter/
       // set_pattern/set_color mutate under the same lock.
@@ -46,13 +46,13 @@ public:
 
   virtual void flush() = 0;
 
-  void set_level(quill::level lvl) noexcept { level_.store(lvl, std::memory_order_relaxed); }
-  quill::level level() const noexcept { return level_.load(std::memory_order_relaxed); }
-  bool should_log(quill::level lvl) const noexcept {
+  void set_level(zest::level lvl) noexcept { level_.store(lvl, std::memory_order_relaxed); }
+  zest::level level() const noexcept { return level_.load(std::memory_order_relaxed); }
+  bool should_log(zest::level lvl) const noexcept {
     return lvl >= level_.load(std::memory_order_relaxed);
   }
 
-  void set_formatter(std::unique_ptr<quill::formatter> f) {
+  void set_formatter(std::unique_ptr<zest::formatter> f) {
     if (!f) {
       return;
     }
@@ -75,17 +75,17 @@ public:
     }
   }
 
-  quill::formatter& formatter() noexcept { return *formatter_; }
-  const quill::formatter& formatter() const noexcept { return *formatter_; }
+  zest::formatter& formatter() noexcept { return *formatter_; }
+  const zest::formatter& formatter() const noexcept { return *formatter_; }
 
 protected:
   // Raw I/O: writes an already-formatted line to the sink's destination.
   virtual void write_output(std::string_view line) = 0;
 
   mutable std::mutex mutex_;
-  std::unique_ptr<quill::formatter> formatter_;
-  std::atomic<quill::level> level_{quill::level::trace};
+  std::unique_ptr<zest::formatter> formatter_;
+  std::atomic<zest::level> level_{zest::level::trace};
   bool color_enabled_{false};
 };
 
-} // namespace quill::sinks
+} // namespace zest::sinks

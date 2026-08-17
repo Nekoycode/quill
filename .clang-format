@@ -1,4 +1,4 @@
-# clang-format style for quill. See:
+# clang-format style for zest. See:
 #   https://clang.llvm.org/docs/ClangFormatStyleOptions.html
 #
 # Apply with:  cmake --build . --target format
@@ -23,6 +23,6 @@ BreakBeforeBraces: Attach
 DerivePointerAlignment: false
 PointerAlignment: Left
 
-# Preserve the manual include grouping (std headers, then <quill/...>, then
+# Preserve the manual include grouping (std headers, then <zest/...>, then
 # local). Sorting is easy to enable later if a canonical order is preferred.
 SortIncludes: false

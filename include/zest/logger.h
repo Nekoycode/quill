@@ -8,17 +8,17 @@
 #include <utility>
 #include <vector>
 
-#include <quill/common.h>
-#include <quill/detail/circular_buffer.h>
-#include <quill/detail/deferred_message.h>
-#include <quill/detail/format.h>
-#include <quill/detail/os.h>
-#include <quill/level.h>
-#include <quill/log_msg.h>
-#include <quill/sink.h>
-#include <quill/source_loc.h>
+#include <zest/common.h>
+#include <zest/detail/circular_buffer.h>
+#include <zest/detail/deferred_message.h>
+#include <zest/detail/format.h>
+#include <zest/detail/os.h>
+#include <zest/level.h>
+#include <zest/log_msg.h>
+#include <zest/sink.h>
+#include <zest/source_loc.h>
 
-namespace quill {
+namespace zest {
 
 // A named logger with one or more sinks.
 //
@@ -46,7 +46,7 @@ public:
   // -- Core logging --------------------------------------------------------
 
   template <typename... Args>
-  void log(source_loc loc, quill::level lvl, detail::format_string_t<Args...> fmt, Args&&... args) {
+  void log(source_loc loc, zest::level lvl, detail::format_string_t<Args...> fmt, Args&&... args) {
     if (!should_log(lvl)) {
       return;
     }
@@ -78,7 +78,7 @@ public:
   }
 
   template <typename... Args>
-  void log_runtime(quill::level lvl, std::string_view fmt, Args&&... args) {
+  void log_runtime(zest::level lvl, std::string_view fmt, Args&&... args) {
     if (!should_log(lvl)) {
       return;
     }
@@ -89,7 +89,7 @@ public:
     flush_if_needed(lvl);
   }
 
-  void log_raw(quill::level lvl, std::string_view message) {
+  void log_raw(zest::level lvl, std::string_view message) {
     if (!should_log(lvl)) {
       return;
     }
@@ -101,40 +101,40 @@ public:
   }
 
   template <typename... Args> void trace(detail::format_string_t<Args...> fmt, Args&&... args) {
-    log(source_loc{}, quill::level::trace, fmt, std::forward<Args>(args)...);
+    log(source_loc{}, zest::level::trace, fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args> void debug(detail::format_string_t<Args...> fmt, Args&&... args) {
-    log(source_loc{}, quill::level::debug, fmt, std::forward<Args>(args)...);
+    log(source_loc{}, zest::level::debug, fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args> void info(detail::format_string_t<Args...> fmt, Args&&... args) {
-    log(source_loc{}, quill::level::info, fmt, std::forward<Args>(args)...);
+    log(source_loc{}, zest::level::info, fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args> void warn(detail::format_string_t<Args...> fmt, Args&&... args) {
-    log(source_loc{}, quill::level::warn, fmt, std::forward<Args>(args)...);
+    log(source_loc{}, zest::level::warn, fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args> void error(detail::format_string_t<Args...> fmt, Args&&... args) {
-    log(source_loc{}, quill::level::error, fmt, std::forward<Args>(args)...);
+    log(source_loc{}, zest::level::error, fmt, std::forward<Args>(args)...);
   }
 
   template <typename... Args> void critical(detail::format_string_t<Args...> fmt, Args&&... args) {
-    log(source_loc{}, quill::level::critical, fmt, std::forward<Args>(args)...);
+    log(source_loc{}, zest::level::critical, fmt, std::forward<Args>(args)...);
   }
 
   // -- Configuration -------------------------------------------------------
 
-  bool should_log(quill::level lvl) const noexcept {
+  bool should_log(zest::level lvl) const noexcept {
     return lvl >= level_.load(std::memory_order_relaxed);
   }
 
-  void set_level(quill::level lvl) noexcept { level_.store(lvl, std::memory_order_relaxed); }
-  quill::level level() const noexcept { return level_.load(std::memory_order_relaxed); }
+  void set_level(zest::level lvl) noexcept { level_.store(lvl, std::memory_order_relaxed); }
+  zest::level level() const noexcept { return level_.load(std::memory_order_relaxed); }
 
-  void flush_on(quill::level lvl) noexcept { flush_level_.store(lvl, std::memory_order_relaxed); }
-  quill::level flush_level() const noexcept { return flush_level_.load(std::memory_order_relaxed); }
+  void flush_on(zest::level lvl) noexcept { flush_level_.store(lvl, std::memory_order_relaxed); }
+  zest::level flush_level() const noexcept { return flush_level_.load(std::memory_order_relaxed); }
 
   void set_pattern(std::string pattern) {
     for (auto& s : sinks_) {
@@ -207,11 +207,11 @@ protected:
 
   std::string name_;
   std::vector<std::shared_ptr<sinks::sink>> sinks_;
-  std::atomic<quill::level> level_{quill::level::trace};
-  std::atomic<quill::level> flush_level_{quill::level::off};
+  std::atomic<zest::level> level_{zest::level::trace};
+  std::atomic<zest::level> flush_level_{zest::level::off};
 
 private:
-  log_msg make_meta(quill::level lvl, source_loc loc) const {
+  log_msg make_meta(zest::level lvl, source_loc loc) const {
     log_msg meta;
     meta.lvl = lvl;
     meta.time = std::chrono::system_clock::now();
@@ -239,7 +239,7 @@ private:
     }
   }
 
-  void flush_if_needed(quill::level lvl) {
+  void flush_if_needed(zest::level lvl) {
     if (lvl >= flush_level_.load(std::memory_order_relaxed)) {
       flush();
     }
@@ -251,4 +251,4 @@ private:
   std::unique_ptr<detail::circular_buffer<log_msg>> backtrace_;
 };
 
-} // namespace quill
+} // namespace zest

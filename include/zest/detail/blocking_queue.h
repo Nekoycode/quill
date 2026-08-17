@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-namespace quill::detail {
+namespace zest::detail {
 
 // Bounded lock-free MPMC queue (Dmitry Vyukov's algorithm). Capacity is
 // rounded up to a power of two. Only `try_*` operations are provided here;
@@ -168,4 +168,4 @@ private:
   std::condition_variable not_empty_;
 };
 
-} // namespace quill::detail
+} // namespace zest::detail

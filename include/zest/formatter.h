@@ -2,10 +2,10 @@
 
 #include <memory>
 
-#include <quill/detail/small_buffer.h>
-#include <quill/log_msg.h>
+#include <zest/detail/small_buffer.h>
+#include <zest/log_msg.h>
 
-namespace quill {
+namespace zest {
 
 // Buffer formatters write into. A 256-byte inline buffer keeps the common case
 // heap-allocation-free; larger lines overflow to the heap.
@@ -30,4 +30,4 @@ public:
 
 using formatter_ptr = std::unique_ptr<formatter>;
 
-} // namespace quill
+} // namespace zest

@@ -2,29 +2,29 @@
 
 #include <memory>
 
-#include <quill/quill.h>
+#include <zest/zest.h>
 
 TEST_CASE("registry create/get/drop") {
-  quill::drop_all();
+  zest::drop_all();
 
-  auto l = quill::create_logger("r1", quill::null_sink());
-  REQUIRE(quill::get_logger("r1") != nullptr);
-  CHECK(quill::get_logger("r1")->name() == "r1");
+  auto l = zest::create_logger("r1", zest::null_sink());
+  REQUIRE(zest::get_logger("r1") != nullptr);
+  CHECK(zest::get_logger("r1")->name() == "r1");
 
-  quill::drop_logger("r1");
-  CHECK(quill::get_logger("r1") == nullptr);
+  zest::drop_logger("r1");
+  CHECK(zest::get_logger("r1") == nullptr);
 }
 
 TEST_CASE("default logger is created lazily") {
-  quill::drop_all();
-  auto def = quill::default_logger();
+  zest::drop_all();
+  auto def = zest::default_logger();
   REQUIRE(def != nullptr);
   CHECK(def->name() == "default");
 }
 
 TEST_CASE("set_default_logger replaces the default") {
-  quill::drop_all();
-  auto custom = quill::create_logger("custom-default", quill::null_sink());
-  quill::set_default_logger(custom);
-  CHECK(quill::default_logger()->name() == "custom-default");
+  zest::drop_all();
+  auto custom = zest::create_logger("custom-default", zest::null_sink());
+  zest::set_default_logger(custom);
+  CHECK(zest::default_logger()->name() == "custom-default");
 }

@@ -7,10 +7,10 @@
 #include <string>
 #include <utility>
 
-#include <quill/detail/os.h>
-#include <quill/sink.h>
+#include <zest/detail/os.h>
+#include <zest/sink.h>
 
-namespace quill::sinks {
+namespace zest::sinks {
 
 // Daily rotation: the file name is `<base>_YYYY-MM-DD`, and a new file is
 // opened once the (rollover-offset) date changes.
@@ -20,10 +20,10 @@ public:
       : base_filename_(std::move(base_filename)), rotation_hour_(rotation_hour),
         rotation_minute_(rotation_minute) {
     if (rotation_hour < 0 || rotation_hour > 23 || rotation_minute < 0 || rotation_minute > 59) {
-      throw std::invalid_argument("quill: daily rotation hour/minute out of range");
+      throw std::invalid_argument("zest: daily rotation hour/minute out of range");
     }
     if (!open_for(today())) {
-      throw std::runtime_error("quill: failed to open log file: " + base_filename_);
+      throw std::runtime_error("zest: failed to open log file: " + base_filename_);
     }
   }
 
@@ -96,4 +96,4 @@ private:
   std::FILE* file_{nullptr};
 };
 
-} // namespace quill::sinks
+} // namespace zest::sinks

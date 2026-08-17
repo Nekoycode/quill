@@ -11,7 +11,7 @@
       "inherits": "dev",
       "description": "Example user preset: copy to CMakeUserPresets.json and adjust.",
       "cacheVariables": {
-        "QUILL_USE_STD_FORMAT": "ON",
+        "ZEST_USE_STD_FORMAT": "ON",
         "CMAKE_CXX_COMPILER": "g++"
       }
     }

@@ -1,4 +1,4 @@
-#include <quill/quill.h>
+#include <zest/zest.h>
 
 #include <spdlog/async.h>
 #include <spdlog/sinks/null_sink.h>
@@ -46,29 +46,27 @@ int main(int argc, char** argv) {
 
   // ---- sync -> null sink -------------------------------------------------
   {
-    auto q = quill::create_logger("quill-sync", quill::null_sink());
+    auto q = zest::create_logger("zest-sync", zest::null_sink());
     q->set_pattern("%v");
-    const double ns =
-        quill::bench::time_per_op(iters, [&] { q->info("benchmark message {}", 42); });
-    quill::bench::report("quill  sync  -> null", ns);
+    const double ns = zest::bench::time_per_op(iters, [&] { q->info("benchmark message {}", 42); });
+    zest::bench::report("zest  sync  -> null", ns);
   }
   {
     auto s = std::make_shared<spdlog::sinks::null_sink_mt>();
     auto lg = std::make_shared<spdlog::logger>("spdlog-sync", s);
     lg->set_pattern("%v");
     const double ns =
-        quill::bench::time_per_op(iters, [&] { lg->info("benchmark message {}", 42); });
-    quill::bench::report("spdlog sync  -> null", ns);
+        zest::bench::time_per_op(iters, [&] { lg->info("benchmark message {}", 42); });
+    zest::bench::report("spdlog sync  -> null", ns);
   }
 
   // ---- async (1 producer) -> null sink -----------------------------------
   {
-    auto q = quill::create_async_logger("quill-async", 8192, 1, quill::null_sink());
+    auto q = zest::create_async_logger("zest-async", 8192, 1, zest::null_sink());
     q->set_pattern("%v");
-    const double ns =
-        quill::bench::time_per_op(iters, [&] { q->info("benchmark message {}", 42); });
+    const double ns = zest::bench::time_per_op(iters, [&] { q->info("benchmark message {}", 42); });
     q->flush();
-    quill::bench::report("quill  async(1) -> null", ns);
+    zest::bench::report("zest  async(1) -> null", ns);
   }
   {
     auto tp = std::make_shared<spdlog::details::thread_pool>(8192, 1);
@@ -77,20 +75,20 @@ int main(int argc, char** argv) {
                                                      spdlog::async_overflow_policy::block);
     lg->set_pattern("%v");
     const double ns =
-        quill::bench::time_per_op(iters, [&] { lg->info("benchmark message {}", 42); });
+        zest::bench::time_per_op(iters, [&] { lg->info("benchmark message {}", 42); });
     lg->flush();
-    quill::bench::report("spdlog async(1) -> null", ns);
+    zest::bench::report("spdlog async(1) -> null", ns);
   }
 
   // ---- async (4 producers) -> null sink ----------------------------------
   constexpr int n_threads = 4;
   const std::size_t per_thread = iters / n_threads;
   {
-    auto q = quill::create_async_logger("quill-async-mt", 65536, n_threads, quill::null_sink());
+    auto q = zest::create_async_logger("zest-async-mt", 65536, n_threads, zest::null_sink());
     q->set_pattern("%v");
     const double ns = bench_mt(n_threads, per_thread, [&] { q->info("benchmark message {}", 42); });
     q->flush();
-    quill::bench::report("quill  async(4) -> null", ns);
+    zest::bench::report("zest  async(4) -> null", ns);
   }
   {
     auto tp = std::make_shared<spdlog::details::thread_pool>(65536, n_threads);
@@ -101,7 +99,7 @@ int main(int argc, char** argv) {
     const double ns =
         bench_mt(n_threads, per_thread, [&] { lg->info("benchmark message {}", 42); });
     lg->flush();
-    quill::bench::report("spdlog async(4) -> null", ns);
+    zest::bench::report("spdlog async(4) -> null", ns);
   }
 
   return 0;

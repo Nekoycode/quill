@@ -9,12 +9,12 @@
 #include <utility>
 #include <vector>
 
-#include <quill/detail/blocking_queue.h>
-#include <quill/detail/deferred_message.h>
-#include <quill/logger.h>
-#include <quill/sink.h>
+#include <zest/detail/blocking_queue.h>
+#include <zest/detail/deferred_message.h>
+#include <zest/logger.h>
+#include <zest/sink.h>
 
-namespace quill {
+namespace zest {
 
 // Message exchanged between the async frontend and the backend writer threads.
 struct async_msg {
@@ -107,4 +107,4 @@ private:
   std::vector<std::jthread> backend_threads_;
 };
 
-} // namespace quill
+} // namespace zest

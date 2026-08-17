@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdio>
 
-namespace quill::bench {
+namespace zest::bench {
 
 // Runs `fn` exactly `iterations` times and returns the average wall-clock time
 // per operation in nanoseconds.
@@ -22,4 +22,4 @@ inline void report(const char* name, double ns_per_op) {
   std::printf("%-44s %12.1f ns/op   %14.0f ops/s\n", name, ns_per_op, 1.0e9 / ns_per_op);
 }
 
-} // namespace quill::bench
+} // namespace zest::bench

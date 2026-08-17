@@ -1,10 +1,10 @@
-# quill
+# zest
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
 A lightweight, highly-customizable and thread-safe C++20 logging library.
 
-`quill` combines an **spdlog-like API** (logger → sinks → pattern formatter →
+`zest` combines an **spdlog-like API** (logger → sinks → pattern formatter →
 level → registry) with a **frontend/backend async engine**: the hot path only
 captures arguments (allocation-free), while a background thread pool formats
 and performs the I/O. This deferred formatting makes the async path ~3× faster
@@ -24,11 +24,11 @@ than spdlog's frontend-formatting async logger.
 - **Allocation-free async hot path** — arguments are captured into a
   small-buffer-optimized holder (no heap allocation for the common case).
 - **Compile-time safety** — format strings are checked at compile time, and
-  `QUILL_ACTIVE_LEVEL` removes disabled statements entirely.
+  `ZEST_ACTIVE_LEVEL` removes disabled statements entirely.
 - **Structured logging** — a `json_sink` emits one JSON object per record.
 - **Backtrace** — keep the last N records and replay them after an error.
 - **Modern CMake** — target-based build, CMake presets, and install/export
-  with `find_package(quill CONFIG)`.
+  with `find_package(zest CONFIG)`.
 
 ## Requirements
 
@@ -38,14 +38,14 @@ than spdlog's frontend-formatting async logger.
 ## Quick start
 
 ```cpp
-#include <quill/quill.h>
+#include <zest/zest.h>
 
 int main() {
-  auto logger = quill::stdout_logger("app");
+  auto logger = zest::stdout_logger("app");
   logger->set_pattern("%^[%H:%M:%S.%e] [%l] [%n] %v%$");
 
-  QUILL_INFO(logger, "hello {}!", "world");
-  QUILL_WARN(logger, "the answer is {}", 42);
+  ZEST_INFO(logger, "hello {}!", "world");
+  ZEST_WARN(logger, "the answer is {}", 42);
   return 0;
 }
 ```
@@ -53,25 +53,25 @@ int main() {
 ```bash
 cmake --preset dev
 cmake --build --preset dev
-./build/dev/examples/quill_basic
+./build/dev/examples/zest_basic
 ```
 
 ## Logging
 
 ### Macros
 
-The `QUILL_LOGGER_*` macros take a logger; the `QUILL_*` macros use the default
+The `ZEST_LOGGER_*` macros take a logger; the `ZEST_*` macros use the default
 logger (created lazily):
 
 ```cpp
-QUILL_LOGGER_TRACE(logger, "trace");      // named logger
-QUILL_LOGGER_DEBUG(logger, "x = {}", 1);
-QUILL_LOGGER_INFO(logger, "info");
-QUILL_LOGGER_WARN(logger, "warn");
-QUILL_LOGGER_ERROR(logger, "error");
-QUILL_LOGGER_CRITICAL(logger, "critical");
+ZEST_LOGGER_TRACE(logger, "trace");      // named logger
+ZEST_LOGGER_DEBUG(logger, "x = {}", 1);
+ZEST_LOGGER_INFO(logger, "info");
+ZEST_LOGGER_WARN(logger, "warn");
+ZEST_LOGGER_ERROR(logger, "error");
+ZEST_LOGGER_CRITICAL(logger, "critical");
 
-QUILL_INFO("default logger");             // default logger
+ZEST_INFO("default logger");             // default logger
 ```
 
 The source location is captured at the call site via
@@ -80,11 +80,11 @@ The source location is captured at the call site via
 ### Levels and filtering
 
 ```cpp
-logger->set_level(quill::level::warn);   // runtime filter (per logger)
+logger->set_level(zest::level::warn);   // runtime filter (per logger)
 ```
 
-To compile out a level entirely, define `QUILL_ACTIVE_LEVEL` before including
-quill (e.g. `-DQUILL_ACTIVE_LEVEL=QUILL_LEVEL_WARN`); statements below that
+To compile out a level entirely, define `ZEST_ACTIVE_LEVEL` before including
+zest (e.g. `-DZEST_ACTIVE_LEVEL=ZEST_LEVEL_WARN`); statements below that
 level are removed at the preprocessor stage.
 
 ### Pattern formatting
@@ -119,22 +119,22 @@ message).
 
 ```cpp
 // one sink
-auto logger = quill::file_logger("app", "app.log");
+auto logger = zest::file_logger("app", "app.log");
 
 // several sinks
-auto logger = quill::create_logger(
-    "multi", quill::stdout_sink(),
-    quill::rolling_file_sink("app.log", /*max_size=*/1024 * 1024,
+auto logger = zest::create_logger(
+    "multi", zest::stdout_sink(),
+    zest::rolling_file_sink("app.log", /*max_size=*/1024 * 1024,
                              /*max_files=*/5));
 ```
 
 ### Custom sinks
 
-Subclass `quill::sinks::sink` and implement `flush()` plus the protected
+Subclass `zest::sinks::sink` and implement `flush()` plus the protected
 `write_output(std::string_view)` (or override `write()` for structured output):
 
 ```cpp
-class my_sink final : public quill::sinks::sink {
+class my_sink final : public zest::sinks::sink {
 public:
   void flush() override {}
 
@@ -150,10 +150,10 @@ protected:
 ```cpp
 // queue size + number of backend threads
 auto logger =
-    quill::create_async_logger("async", /*queue_size=*/65536,
-                               /*backend_threads=*/4, quill::basic_file_sink("app.log"));
+    zest::create_async_logger("async", /*queue_size=*/65536,
+                               /*backend_threads=*/4, zest::basic_file_sink("app.log"));
 
-QUILL_LOGGER_INFO(logger, "this formats and writes on a background thread");
+ZEST_LOGGER_INFO(logger, "this formats and writes on a background thread");
 logger->flush();
 ```
 
@@ -174,8 +174,8 @@ logger->disable_backtrace();
 ## JSON logging
 
 ```cpp
-auto logger = quill::create_logger("json", quill::json_sink("app.json"));
-QUILL_LOGGER_INFO(logger, "user {} logged in", "alice");
+auto logger = zest::create_logger("json", zest::json_sink("app.json"));
+ZEST_LOGGER_INFO(logger, "user {} logged in", "alice");
 // {"time":"2026-08-16T10:30:00.123","level":"info","logger":"json",...}
 ```
 
@@ -193,11 +193,11 @@ Configure presets: `dev`, `debug`, `release`, `relwithdebinfo`, `bench`, `ci`,
 ## Consuming from another CMake project
 
 ```cmake
-find_package(quill CONFIG REQUIRED)
-target_link_libraries(my_app PRIVATE quill::quill)
+find_package(zest CONFIG REQUIRED)
+target_link_libraries(my_app PRIVATE zest::zest)
 ```
 
-Or via FetchContent / `add_subdirectory` — `quill::quill` is an INTERFACE
+Or via FetchContent / `add_subdirectory` — `zest::zest` is an INTERFACE
 (header-only) target.
 
 ## Benchmarks
@@ -214,14 +214,14 @@ cmake --build --preset bench
 An optional spdlog comparison (`sudo apt install libspdlog-dev`):
 
 ```bash
-cmake --preset bench -DQUILL_BUILD_SPDLOG_BENCH=ON
+cmake --preset bench -DZEST_BUILD_SPDLOG_BENCH=ON
 cmake --build --preset bench
 ./build/bench/benchmarks/bench_spdlog
 ```
 
 Representative numbers (500k iterations, Release, null sink, gcc 15):
 
-| scenario | quill | spdlog |
+| scenario | zest | spdlog |
 |---|---|---|
 | sync → null | 69 ns/op | 54 ns/op |
 | async (1 producer) → null | 101 ns/op | 324 ns/op |
@@ -231,7 +231,7 @@ Representative numbers (500k iterations, Release, null sink, gcc 15):
 
 - **Format** — `cmake --build . --target format` (apply) /
   `check-format` (verify), using `.clang-format`.
-- **Static analysis** — `-DQUILL_ENABLE_CLANG_TIDY=ON` (see `.clang-tidy`).
+- **Static analysis** — `-DZEST_ENABLE_CLANG_TIDY=ON` (see `.clang-tidy`).
 - **Coverage** — `cmake --preset coverage && cmake --build --preset coverage &&
   ctest --preset coverage`, then capture with `lcov`.
 - **API docs** — `cmake --build . --target docs` (requires Doxygen).
@@ -242,7 +242,7 @@ sanitizers, fmt fallback, and `check-format`/`clang-tidy`/`coverage` gates.
 ## Project layout
 
 ```
-include/quill/    public headers (header-only library)
+include/zest/    public headers (header-only library)
 tests/            unit tests (doctest, run through CTest)
 examples/         small usage examples
 benchmarks/       micro-benchmarks (std::chrono)

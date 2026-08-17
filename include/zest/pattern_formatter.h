@@ -4,12 +4,12 @@
 #include <string_view>
 #include <vector>
 
-#include <quill/common.h>
-#include <quill/detail/os.h>
-#include <quill/formatter.h>
-#include <quill/log_msg.h>
+#include <zest/common.h>
+#include <zest/detail/os.h>
+#include <zest/formatter.h>
+#include <zest/log_msg.h>
 
-namespace quill {
+namespace zest {
 
 // Formats log records according to a spdlog-style pattern string.
 //
@@ -295,4 +295,4 @@ private:
   bool has_time_flag_{false};
 };
 
-} // namespace quill
+} // namespace zest

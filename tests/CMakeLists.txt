@@ -1,5 +1,5 @@
 add_executable(
-  quill_tests
+  zest_tests
   test_main.cpp
   test_level.cpp
   test_pattern_formatter.cpp
@@ -12,7 +12,7 @@ add_executable(
   test_concurrency.cpp
   test_detail.cpp)
 
-target_link_libraries(quill_tests PRIVATE quill::quill doctest)
-quill_set_warnings(quill_tests)
+target_link_libraries(zest_tests PRIVATE zest::zest doctest)
+zest_set_warnings(zest_tests)
 
-add_test(NAME quill_tests COMMAND quill_tests)
+add_test(NAME zest_tests COMMAND zest_tests)

@@ -2,9 +2,9 @@
 
 #include <string>
 
-#include <quill/sink.h>
+#include <zest/sink.h>
 
-namespace quill::sinks {
+namespace zest::sinks {
 
 // Discards all output. Useful for benchmarking the hot path.
 class null_sink final : public sink {
@@ -15,4 +15,4 @@ protected:
   void write_output(std::string_view /*line*/) override {}
 };
 
-} // namespace quill::sinks
+} // namespace zest::sinks

@@ -5,17 +5,17 @@
 #include <type_traits>
 #include <utility>
 
-#include <quill/common.h>
+#include <zest/common.h>
 
-#if QUILL_USE_STD_FORMAT
+#if ZEST_USE_STD_FORMAT
 #include <format>
 #else
 #include <fmt/format.h>
 #endif
 
-namespace quill::detail {
+namespace zest::detail {
 
-#if QUILL_USE_STD_FORMAT
+#if ZEST_USE_STD_FORMAT
 
 // Compile-time checked format string. `type_identity_t` keeps `Args...`
 // deducible from the argument pack (not from the format string itself), while
@@ -55,4 +55,4 @@ inline std::string vformat(std::string_view fmt, fmt::format_args args) {
 
 #endif
 
-} // namespace quill::detail
+} // namespace zest::detail

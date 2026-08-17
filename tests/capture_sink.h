@@ -4,12 +4,12 @@
 #include <string>
 #include <vector>
 
-#include <quill/quill.h>
+#include <zest/zest.h>
 
-namespace quill::test {
+namespace zest::test {
 
 // A sink that records every written line, for assertions in unit tests.
-class capture_sink final : public quill::sinks::sink {
+class capture_sink final : public zest::sinks::sink {
 public:
   void flush() override {}
 
@@ -33,4 +33,4 @@ private:
   std::vector<std::string> lines_;
 };
 
-} // namespace quill::test
+} // namespace zest::test

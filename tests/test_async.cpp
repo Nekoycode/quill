@@ -4,19 +4,19 @@
 #include <thread>
 #include <vector>
 
-#include <quill/async_logger.h>
+#include <zest/async_logger.h>
 
 #include "capture_sink.h"
 #include "test_config.h"
 
 TEST_CASE("async logger delivers all messages from multiple threads") {
-  auto cs = std::make_shared<quill::test::capture_sink>();
-  std::vector<std::shared_ptr<quill::sinks::sink>> sinks{cs};
-  auto lg = std::make_shared<quill::async_logger>("async", std::move(sinks), 1024);
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  std::vector<std::shared_ptr<zest::sinks::sink>> sinks{cs};
+  auto lg = std::make_shared<zest::async_logger>("async", std::move(sinks), 1024);
   lg->set_pattern("%v");
 
   constexpr int n_threads = 4;
-  constexpr int n_msgs = QUILL_TEST_ITERS(1000);
+  constexpr int n_msgs = ZEST_TEST_ITERS(1000);
 
   std::vector<std::thread> ts;
   ts.reserve(n_threads);
@@ -36,27 +36,27 @@ TEST_CASE("async logger delivers all messages from multiple threads") {
 }
 
 TEST_CASE("async logger flushes pending messages before shutdown") {
-  auto cs = std::make_shared<quill::test::capture_sink>();
-  std::vector<std::shared_ptr<quill::sinks::sink>> sinks{cs};
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  std::vector<std::shared_ptr<zest::sinks::sink>> sinks{cs};
   {
-    auto lg = std::make_shared<quill::async_logger>("async2", std::move(sinks), 64);
+    auto lg = std::make_shared<zest::async_logger>("async2", std::move(sinks), 64);
     lg->set_pattern("%v");
-    for (int i = 0; i < QUILL_TEST_ITERS(1000); ++i) {
+    for (int i = 0; i < ZEST_TEST_ITERS(1000); ++i) {
       lg->info("msg {}", i);
     }
   } // destructor drains the queue
 
-  CHECK(cs->count() == QUILL_TEST_ITERS(1000));
+  CHECK(cs->count() == ZEST_TEST_ITERS(1000));
 }
 
 TEST_CASE("async logger with multiple backends delivers all messages") {
-  auto cs = std::make_shared<quill::test::capture_sink>();
-  std::vector<std::shared_ptr<quill::sinks::sink>> sinks{cs};
-  auto lg = std::make_shared<quill::async_logger>("async4", std::move(sinks), 1024, /*backends=*/4);
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  std::vector<std::shared_ptr<zest::sinks::sink>> sinks{cs};
+  auto lg = std::make_shared<zest::async_logger>("async4", std::move(sinks), 1024, /*backends=*/4);
   lg->set_pattern("%v");
 
   constexpr int n_threads = 8;
-  constexpr int n_msgs = QUILL_TEST_ITERS(2000);
+  constexpr int n_msgs = ZEST_TEST_ITERS(2000);
 
   std::vector<std::thread> ts;
   ts.reserve(n_threads);

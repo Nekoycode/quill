@@ -5,9 +5,9 @@
 #include <string>
 #include <utility>
 
-#include <quill/sink.h>
+#include <zest/sink.h>
 
-namespace quill::sinks {
+namespace zest::sinks {
 
 // Size-based rolling (a.k.a. "rolling log"): when the current file would exceed
 // `max_size`, it is renamed to `<filename>.1`, shifting older backups up to
@@ -19,7 +19,7 @@ public:
       : base_filename_(std::move(base_filename)), max_size_(max_size), max_files_(max_files) {
     file_ = std::fopen(base_filename_.c_str(), "ab");
     if (file_ == nullptr) {
-      throw std::runtime_error("quill: failed to open log file: " + base_filename_);
+      throw std::runtime_error("zest: failed to open log file: " + base_filename_);
     }
     // Account for any pre-existing content so the first rotation is accurate.
     if (std::fseek(file_, 0, SEEK_END) == 0) {
@@ -93,4 +93,4 @@ private:
 // spdlog-compatible name for the same size-based rolling behavior.
 using rotating_file_sink = rolling_file_sink;
 
-} // namespace quill::sinks
+} // namespace zest::sinks

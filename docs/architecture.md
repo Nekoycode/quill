@@ -1,6 +1,6 @@
 # Architecture
 
-`quill` is a header-only C++20 logging library. Its API follows the familiar
+`zest` is a header-only C++20 logging library. Its API follows the familiar
 spdlog shape (logger → sinks → pattern formatter → level → registry), while its
 async engine offloads I/O to a dedicated background thread fed by a bounded
 lock-free queue.
@@ -18,7 +18,7 @@ user code ──► logger ──► sinks (console / file / rotating / daily / 
 ### 1. `logger`
 
 A named holder of one or more sinks plus configuration (level, flush level,
-pattern, backtrace). The logging macros (`QUILL_LOGGER_*`) resolve to
+pattern, backtrace). The logging macros (`ZEST_LOGGER_*`) resolve to
 `logger::log(source_loc, level, format_string, args...)`, capturing the call
 site via `std::source_location::current()`.
 
@@ -48,7 +48,7 @@ into a line. Unknown flags are preserved literally.
 
 ### 4. `level` + compile-time gating
 
-`quill::level` is a `uint8_t`-backed enum. `QUILL_ACTIVE_LEVEL` gates the
+`zest::level` is a `uint8_t`-backed enum. `ZEST_ACTIVE_LEVEL` gates the
 logging macros at the preprocessor level, so disabled statements are removed
 entirely (no formatting, no argument evaluation).
 

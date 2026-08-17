@@ -5,10 +5,10 @@
 #include <string>
 #include <string_view>
 
-#include <quill/level.h>
-#include <quill/source_loc.h>
+#include <zest/level.h>
+#include <zest/source_loc.h>
 
-namespace quill {
+namespace zest {
 
 // Metadata for a single log record plus the message text (`payload`, used as
 // the `%v` value by pattern formatters).
@@ -25,4 +25,4 @@ struct log_msg {
   std::string payload;
 };
 
-} // namespace quill
+} // namespace zest

@@ -1,7 +1,7 @@
-# clang-tidy configuration for quill. See:
+# clang-tidy configuration for zest. See:
 #   https://clang.llvm.org/extra/clang-tidy/
 #
-# Run via:  cmake -DQUILL_ENABLE_CLANG_TIDY=ON -S . -B build
+# Run via:  cmake -DZEST_ENABLE_CLANG_TIDY=ON -S . -B build
 
 Checks: >
   bugprone-*,
@@ -22,6 +22,6 @@ Checks: >
 WarningsAsErrors: ''
 
 # Only report diagnostics for the library headers (not tests/examples).
-HeaderFilterRegex: '^include/quill/.*'
+HeaderFilterRegex: '^include/zest/.*'
 
 FormatStyle: file

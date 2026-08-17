@@ -2,16 +2,16 @@
 
 ## 1. Header-only, zero mandatory dependencies
 
-The library is an `INTERFACE` target (`quill::quill`) that ships only headers.
-Formatting uses C++20 `std::format`; an opt-in `QUILL_USE_STD_FORMAT=OFF` mode
+The library is an `INTERFACE` target (`zest::zest`) that ships only headers.
+Formatting uses C++20 `std::format`; an opt-in `ZEST_USE_STD_FORMAT=OFF` mode
 switches to the `fmt` library for older toolchains. Rationale: minimal build
 integration and no runtime dependency by default.
 
 ## 2. spdlog-like API surface
 
 `logger`/`sink`/`pattern_formatter`/`level`/`registry` and the
-`QUILL_LOGGER_*` macros deliberately mirror spdlog so that prior spdlog
-experience transfers. The async *engine* differs: quill defers the message
+`ZEST_LOGGER_*` macros deliberately mirror spdlog so that prior spdlog
+experience transfers. The async *engine* differs: zest defers the message
 formatting to the backend thread — the hot path captures the format string and
 arguments into a `detail::deferred_message` (small-buffer-optimized: the common
 case is heap-allocation-free) instead of formatting — and uses a bounded
@@ -40,9 +40,9 @@ relying on GNU extensions.
 
 ## 6. CMake-first, presets-driven
 
-Target-based, namespace-alias (`quill::quill`), `BUILD_INTERFACE`/
-`INSTALL_INTERFACE` includes, `GNUInstallDirs` + exported `quillTargets`, and a
-`find_package(quill CONFIG)` package. `CMakePresets.json` covers local dev,
+Target-based, namespace-alias (`zest::zest`), `BUILD_INTERFACE`/
+`INSTALL_INTERFACE` includes, `GNUInstallDirs` + exported `zestTargets`, and a
+`find_package(zest CONFIG)` package. `CMakePresets.json` covers local dev,
 CI, and sanitizers; tests are `doctest` + CTest.
 
 ## 7. Lightweight, small runtime footprint

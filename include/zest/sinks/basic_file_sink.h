@@ -5,9 +5,9 @@
 #include <string>
 #include <utility>
 
-#include <quill/sink.h>
+#include <zest/sink.h>
 
-namespace quill::sinks {
+namespace zest::sinks {
 
 // Appends to a single file, optionally truncating it on open.
 class basic_file_sink final : public sink {
@@ -16,7 +16,7 @@ public:
       : filename_(std::move(filename)) {
     file_ = std::fopen(filename_.c_str(), truncate ? "wb" : "ab");
     if (file_ == nullptr) {
-      throw std::runtime_error("quill: failed to open log file: " + filename_);
+      throw std::runtime_error("zest: failed to open log file: " + filename_);
     }
   }
 
@@ -49,4 +49,4 @@ private:
   std::FILE* file_{nullptr};
 };
 
-} // namespace quill::sinks
+} // namespace zest::sinks

@@ -2,13 +2,13 @@
 
 #include <memory>
 
-#include <quill/logger.h>
+#include <zest/logger.h>
 
 #include "capture_sink.h"
 
 TEST_CASE("backtrace re-emits the most recent records") {
-  auto cs = std::make_shared<quill::test::capture_sink>();
-  quill::logger lg("bt", cs);
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  zest::logger lg("bt", cs);
   lg.set_pattern("%v");
   lg.enable_backtrace(3);
 
@@ -25,8 +25,8 @@ TEST_CASE("backtrace re-emits the most recent records") {
 }
 
 TEST_CASE("dump_backtrace with nothing captured adds nothing") {
-  auto cs = std::make_shared<quill::test::capture_sink>();
-  quill::logger lg("bt2", cs);
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  zest::logger lg("bt2", cs);
   lg.set_pattern("%v");
 
   lg.dump_backtrace();
@@ -35,8 +35,8 @@ TEST_CASE("dump_backtrace with nothing captured adds nothing") {
 }
 
 TEST_CASE("disable_backtrace stops capturing") {
-  auto cs = std::make_shared<quill::test::capture_sink>();
-  quill::logger lg("bt3", cs);
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  zest::logger lg("bt3", cs);
   lg.set_pattern("%v");
 
   lg.enable_backtrace(2);

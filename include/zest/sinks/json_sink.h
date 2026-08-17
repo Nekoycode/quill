@@ -7,12 +7,12 @@
 #include <string_view>
 #include <utility>
 
-#include <quill/detail/os.h>
-#include <quill/level.h>
-#include <quill/log_msg.h>
-#include <quill/sink.h>
+#include <zest/detail/os.h>
+#include <zest/level.h>
+#include <zest/log_msg.h>
+#include <zest/sink.h>
 
-namespace quill::sinks {
+namespace zest::sinks {
 
 // Writes one JSON object per log record, e.g.
 //   {"time":"2025-08-16T10:30:00.123","level":"info","logger":"app",...}
@@ -24,7 +24,7 @@ public:
   explicit json_sink(std::string filename, bool truncate = true) : filename_(std::move(filename)) {
     file_ = std::fopen(filename_.c_str(), truncate ? "wb" : "ab");
     if (file_ == nullptr) {
-      throw std::runtime_error("quill: failed to open log file: " + filename_);
+      throw std::runtime_error("zest: failed to open log file: " + filename_);
     }
   }
 
@@ -124,4 +124,4 @@ private:
   std::FILE* file_{nullptr};
 };
 
-} // namespace quill::sinks
+} // namespace zest::sinks

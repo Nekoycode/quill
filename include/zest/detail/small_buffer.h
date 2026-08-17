@@ -6,7 +6,7 @@
 #include <string>
 #include <string_view>
 
-namespace quill::detail {
+namespace zest::detail {
 
 // Small-buffer-optimized string builder. Stores up to `N` bytes inline (no
 // heap allocation); overflows to a heap `std::string`. Used to format a log
@@ -61,4 +61,4 @@ private:
   std::unique_ptr<std::string> heap_;
 };
 
-} // namespace quill::detail
+} // namespace zest::detail

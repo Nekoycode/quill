@@ -6,8 +6,8 @@
 #include "capture_sink.h"
 
 TEST_CASE("logger formats and writes to a sink") {
-  auto cs = std::make_shared<quill::test::capture_sink>();
-  quill::logger lg("test", cs);
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  zest::logger lg("test", cs);
   lg.set_pattern("%v");
 
   lg.info("value={}", 42);
@@ -19,10 +19,10 @@ TEST_CASE("logger formats and writes to a sink") {
 }
 
 TEST_CASE("logger respects level filtering") {
-  auto cs = std::make_shared<quill::test::capture_sink>();
-  quill::logger lg("test", cs);
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  zest::logger lg("test", cs);
   lg.set_pattern("%v");
-  lg.set_level(quill::level::warn);
+  lg.set_level(zest::level::warn);
 
   lg.info("hidden");
   lg.warn("shown");
@@ -33,12 +33,12 @@ TEST_CASE("logger respects level filtering") {
 }
 
 TEST_CASE("logger writes to all sinks that accept the level") {
-  auto a = std::make_shared<quill::test::capture_sink>();
-  auto b = std::make_shared<quill::test::capture_sink>();
-  b->set_level(quill::level::error);
+  auto a = std::make_shared<zest::test::capture_sink>();
+  auto b = std::make_shared<zest::test::capture_sink>();
+  b->set_level(zest::level::error);
 
-  std::vector<std::shared_ptr<quill::sinks::sink>> sinks{a, b};
-  quill::logger lg("multi", std::move(sinks));
+  std::vector<std::shared_ptr<zest::sinks::sink>> sinks{a, b};
+  zest::logger lg("multi", std::move(sinks));
   lg.set_pattern("%v");
 
   lg.info("info");
@@ -49,12 +49,12 @@ TEST_CASE("logger writes to all sinks that accept the level") {
 }
 
 TEST_CASE("logger supports multiple arguments and runtime format strings") {
-  auto cs = std::make_shared<quill::test::capture_sink>();
-  quill::logger lg("test", cs);
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  zest::logger lg("test", cs);
   lg.set_pattern("%v");
 
   lg.info("{} + {} = {}", 1, 2, 3);
-  lg.log_runtime(quill::level::info, "runtime {} {}", "ok", 7);
+  lg.log_runtime(zest::level::info, "runtime {} {}", "ok", 7);
   lg.flush();
 
   const auto lines = cs->lines();

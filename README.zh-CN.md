@@ -1,10 +1,10 @@
-# quill
+# zest
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
 一个轻量、高度可定制、线程安全的 C++20 日志库。
 
-`quill` 将 **spdlog 式的 API**(logger → sinks → pattern formatter → level →
+`zest` 将 **spdlog 式的 API**(logger → sinks → pattern formatter → level →
 registry)与**前端/后端异步引擎**结合:热路径只捕获参数(零分配),由后台线程池完成
 格式化与 I/O。这种「延迟格式化」让异步路径比 spdlog 的前端格式化异步日志器快约 3 倍。
 
@@ -17,10 +17,10 @@ registry)与**前端/后端异步引擎**结合:热路径只捕获参数(零分�
 - **spdlog 式 API** —— 熟悉的 `logger`、`sinks`、pattern formatter、级别过滤与全局注册表。
 - **可靠并发** —— 有界无锁 MPMC 队列 + 可配置后端线程池;优雅关闭会排空所有在途记录。
 - **异步热路径零分配** —— 参数被捕获进小缓冲优化的容器(常见情况无堆分配)。
-- **编译期安全** —— 格式串在编译期校验;`QUILL_ACTIVE_LEVEL` 会彻底移除被禁用级别的语句。
+- **编译期安全** —— 格式串在编译期校验;`ZEST_ACTIVE_LEVEL` 会彻底移除被禁用级别的语句。
 - **结构化日志** —— `json_sink` 每条记录输出一个 JSON 对象。
 - **回溯(backtrace)** —— 保留最近 N 条记录,出错后可回放。
-- **现代 CMake** —— 目标导向构建、CMake presets、安装导出(`find_package(quill CONFIG)`)。
+- **现代 CMake** —— 目标导向构建、CMake presets、安装导出(`find_package(zest CONFIG)`)。
 
 ## 环境要求
 
@@ -30,14 +30,14 @@ registry)与**前端/后端异步引擎**结合:热路径只捕获参数(零分�
 ## 快速开始
 
 ```cpp
-#include <quill/quill.h>
+#include <zest/zest.h>
 
 int main() {
-  auto logger = quill::stdout_logger("app");
+  auto logger = zest::stdout_logger("app");
   logger->set_pattern("%^[%H:%M:%S.%e] [%l] [%n] %v%$");
 
-  QUILL_INFO(logger, "hello {}!", "world");
-  QUILL_WARN(logger, "the answer is {}", 42);
+  ZEST_INFO(logger, "hello {}!", "world");
+  ZEST_WARN(logger, "the answer is {}", 42);
   return 0;
 }
 ```
@@ -45,24 +45,24 @@ int main() {
 ```bash
 cmake --preset dev
 cmake --build --preset dev
-./build/dev/examples/quill_basic
+./build/dev/examples/zest_basic
 ```
 
 ## 日志记录
 
 ### 宏
 
-`QUILL_LOGGER_*` 系列宏接收一个 logger;`QUILL_*` 系列宏使用默认 logger(按需惰性创建):
+`ZEST_LOGGER_*` 系列宏接收一个 logger;`ZEST_*` 系列宏使用默认 logger(按需惰性创建):
 
 ```cpp
-QUILL_LOGGER_TRACE(logger, "trace");      // 指定 logger
-QUILL_LOGGER_DEBUG(logger, "x = {}", 1);
-QUILL_LOGGER_INFO(logger, "info");
-QUILL_LOGGER_WARN(logger, "warn");
-QUILL_LOGGER_ERROR(logger, "error");
-QUILL_LOGGER_CRITICAL(logger, "critical");
+ZEST_LOGGER_TRACE(logger, "trace");      // 指定 logger
+ZEST_LOGGER_DEBUG(logger, "x = {}", 1);
+ZEST_LOGGER_INFO(logger, "info");
+ZEST_LOGGER_WARN(logger, "warn");
+ZEST_LOGGER_ERROR(logger, "error");
+ZEST_LOGGER_CRITICAL(logger, "critical");
 
-QUILL_INFO("默认 logger");                // 默认 logger
+ZEST_INFO("默认 logger");                // 默认 logger
 ```
 
 源码位置通过 `std::source_location::current()` 在调用点自动捕获。
@@ -70,11 +70,11 @@ QUILL_INFO("默认 logger");                // 默认 logger
 ### 级别与过滤
 
 ```cpp
-logger->set_level(quill::level::warn);   // 运行时过滤(按 logger)
+logger->set_level(zest::level::warn);   // 运行时过滤(按 logger)
 ```
 
-要在编译期彻底移除某个级别,在包含 quill 之前定义 `QUILL_ACTIVE_LEVEL`(例如
-`-DQUILL_ACTIVE_LEVEL=QUILL_LEVEL_WARN`),低于该级别的语句会在预处理阶段被移除。
+要在编译期彻底移除某个级别,在包含 zest 之前定义 `ZEST_ACTIVE_LEVEL`(例如
+`-DZEST_ACTIVE_LEVEL=ZEST_LEVEL_WARN`),低于该级别的语句会在预处理阶段被移除。
 
 ### Pattern 格式化
 
@@ -107,22 +107,22 @@ logger->set_level(quill::level::warn);   // 运行时过滤(按 logger)
 
 ```cpp
 // 单个 sink
-auto logger = quill::file_logger("app", "app.log");
+auto logger = zest::file_logger("app", "app.log");
 
 // 多个 sink
-auto logger = quill::create_logger(
-    "multi", quill::stdout_sink(),
-    quill::rolling_file_sink("app.log", /*max_size=*/1024 * 1024,
+auto logger = zest::create_logger(
+    "multi", zest::stdout_sink(),
+    zest::rolling_file_sink("app.log", /*max_size=*/1024 * 1024,
                              /*max_files=*/5));
 ```
 
 ### 自定义 sink
 
-继承 `quill::sinks::sink`,实现 `flush()` 与受保护的 `write_output(std::string_view)`
+继承 `zest::sinks::sink`,实现 `flush()` 与受保护的 `write_output(std::string_view)`
 (结构化输出则重写 `write()`):
 
 ```cpp
-class my_sink final : public quill::sinks::sink {
+class my_sink final : public zest::sinks::sink {
 public:
   void flush() override {}
 
@@ -138,10 +138,10 @@ protected:
 ```cpp
 // 队列大小 + 后端线程数
 auto logger =
-    quill::create_async_logger("async", /*queue_size=*/65536,
-                               /*backend_threads=*/4, quill::basic_file_sink("app.log"));
+    zest::create_async_logger("async", /*queue_size=*/65536,
+                               /*backend_threads=*/4, zest::basic_file_sink("app.log"));
 
-QUILL_LOGGER_INFO(logger, "这条会在后台线程格式化并写入");
+ZEST_LOGGER_INFO(logger, "这条会在后台线程格式化并写入");
 logger->flush();
 ```
 
@@ -160,8 +160,8 @@ logger->disable_backtrace();
 ## JSON 日志
 
 ```cpp
-auto logger = quill::create_logger("json", quill::json_sink("app.json"));
-QUILL_LOGGER_INFO(logger, "user {} logged in", "alice");
+auto logger = zest::create_logger("json", zest::json_sink("app.json"));
+ZEST_LOGGER_INFO(logger, "user {} logged in", "alice");
 // {"time":"2026-08-16T10:30:00.123","level":"info","logger":"json",...}
 ```
 
@@ -179,11 +179,11 @@ configure 预设:`dev`、`debug`、`release`、`relwithdebinfo`、`bench`、`ci`
 ## 在其他 CMake 项目中使用
 
 ```cmake
-find_package(quill CONFIG REQUIRED)
-target_link_libraries(my_app PRIVATE quill::quill)
+find_package(zest CONFIG REQUIRED)
+target_link_libraries(my_app PRIVATE zest::zest)
 ```
 
-也可通过 FetchContent / `add_subdirectory` —— `quill::quill` 是一个 INTERFACE
+也可通过 FetchContent / `add_subdirectory` —— `zest::zest` 是一个 INTERFACE
 (头文件库)目标。
 
 ## 基准测试
@@ -200,14 +200,14 @@ cmake --build --preset bench
 可选的 spdlog 对比(需 `sudo apt install libspdlog-dev`):
 
 ```bash
-cmake --preset bench -DQUILL_BUILD_SPDLOG_BENCH=ON
+cmake --preset bench -DZEST_BUILD_SPDLOG_BENCH=ON
 cmake --build --preset bench
 ./build/bench/benchmarks/bench_spdlog
 ```
 
 代表数据(50 万次迭代,Release,null sink,gcc 15):
 
-| 场景 | quill | spdlog |
+| 场景 | zest | spdlog |
 |---|---|---|
 | sync → null | 69 ns/op | 54 ns/op |
 | async(1 生产者)→ null | 101 ns/op | 324 ns/op |
@@ -217,7 +217,7 @@ cmake --build --preset bench
 
 - **格式化** —— `cmake --build . --target format`(应用)/ `check-format`(校验),使用
   `.clang-format`。
-- **静态分析** —— `-DQUILL_ENABLE_CLANG_TIDY=ON`(见 `.clang-tidy`)。
+- **静态分析** —— `-DZEST_ENABLE_CLANG_TIDY=ON`(见 `.clang-tidy`)。
 - **覆盖率** —— `cmake --preset coverage && cmake --build --preset coverage &&
   ctest --preset coverage`,再用 `lcov` 采集。
 - **API 文档** —— `cmake --build . --target docs`(需要 Doxygen)。
@@ -228,7 +228,7 @@ cmake --build --preset bench
 ## 项目结构
 
 ```
-include/quill/    公共头文件(头文件库)
+include/zest/    公共头文件(头文件库)
 tests/            单元测试(doctest,通过 CTest 运行)
 examples/         小型使用示例
 benchmarks/       微基准(std::chrono)

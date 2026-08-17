@@ -8,9 +8,9 @@
 #include <type_traits>
 #include <utility>
 
-#include <quill/detail/format.h>
+#include <zest/detail/format.h>
 
-namespace quill::detail {
+namespace zest::detail {
 
 // Type-erased, owning, unformatted log message with a small inline buffer.
 //
@@ -152,4 +152,4 @@ private:
   destroy_fn destroy_{nullptr};
 };
 
-} // namespace quill::detail
+} // namespace zest::detail

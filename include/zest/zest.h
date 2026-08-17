@@ -8,82 +8,82 @@
 #include <utility>
 #include <vector>
 
-#include <quill/common.h>
-#include <quill/level.h>
-#include <quill/source_loc.h>
-#include <quill/log_msg.h>
-#include <quill/formatter.h>
-#include <quill/pattern_formatter.h>
-#include <quill/sink.h>
-#include <quill/sinks/console_sink.h>
-#include <quill/sinks/basic_file_sink.h>
-#include <quill/sinks/rotating_file_sink.h>
-#include <quill/sinks/daily_file_sink.h>
-#include <quill/sinks/null_sink.h>
-#include <quill/sinks/json_sink.h>
-#include <quill/logger.h>
-#include <quill/async_logger.h>
-#include <quill/registry.h>
+#include <zest/common.h>
+#include <zest/level.h>
+#include <zest/source_loc.h>
+#include <zest/log_msg.h>
+#include <zest/formatter.h>
+#include <zest/pattern_formatter.h>
+#include <zest/sink.h>
+#include <zest/sinks/console_sink.h>
+#include <zest/sinks/basic_file_sink.h>
+#include <zest/sinks/rotating_file_sink.h>
+#include <zest/sinks/daily_file_sink.h>
+#include <zest/sinks/null_sink.h>
+#include <zest/sinks/json_sink.h>
+#include <zest/logger.h>
+#include <zest/async_logger.h>
+#include <zest/registry.h>
 
 // ---------------------------------------------------------------------------
 // Logging macros
 //
-// The level is passed as a compile-time `quill::level` enumerator and gated at
-// the preprocessor level by QUILL_ACTIVE_LEVEL, so disabled statements are
+// The level is passed as a compile-time `zest::level` enumerator and gated at
+// the preprocessor level by ZEST_ACTIVE_LEVEL, so disabled statements are
 // compiled out entirely (no formatting, no argument evaluation). The source
 // location is captured at the call site via std::source_location::current().
 // ---------------------------------------------------------------------------
-#define QUILL_LOGGER_CALL(logger, lvl, ...)                                                        \
+#define ZEST_LOGGER_CALL(logger, lvl, ...)                                                         \
   do {                                                                                             \
-    (logger)->log(quill::source_loc::current(), lvl, __VA_ARGS__);                                 \
+    (logger)->log(zest::source_loc::current(), lvl, __VA_ARGS__);                                  \
   } while (false)
 
-#if QUILL_ACTIVE_LEVEL <= QUILL_LEVEL_TRACE
-#define QUILL_LOGGER_TRACE(logger, ...) QUILL_LOGGER_CALL(logger, quill::level::trace, __VA_ARGS__)
+#if ZEST_ACTIVE_LEVEL <= ZEST_LEVEL_TRACE
+#define ZEST_LOGGER_TRACE(logger, ...) ZEST_LOGGER_CALL(logger, zest::level::trace, __VA_ARGS__)
 #else
-#define QUILL_LOGGER_TRACE(logger, ...) ((void)0)
+#define ZEST_LOGGER_TRACE(logger, ...) ((void)0)
 #endif
 
-#if QUILL_ACTIVE_LEVEL <= QUILL_LEVEL_DEBUG
-#define QUILL_LOGGER_DEBUG(logger, ...) QUILL_LOGGER_CALL(logger, quill::level::debug, __VA_ARGS__)
+#if ZEST_ACTIVE_LEVEL <= ZEST_LEVEL_DEBUG
+#define ZEST_LOGGER_DEBUG(logger, ...) ZEST_LOGGER_CALL(logger, zest::level::debug, __VA_ARGS__)
 #else
-#define QUILL_LOGGER_DEBUG(logger, ...) ((void)0)
+#define ZEST_LOGGER_DEBUG(logger, ...) ((void)0)
 #endif
 
-#if QUILL_ACTIVE_LEVEL <= QUILL_LEVEL_INFO
-#define QUILL_LOGGER_INFO(logger, ...) QUILL_LOGGER_CALL(logger, quill::level::info, __VA_ARGS__)
+#if ZEST_ACTIVE_LEVEL <= ZEST_LEVEL_INFO
+#define ZEST_LOGGER_INFO(logger, ...) ZEST_LOGGER_CALL(logger, zest::level::info, __VA_ARGS__)
 #else
-#define QUILL_LOGGER_INFO(logger, ...) ((void)0)
+#define ZEST_LOGGER_INFO(logger, ...) ((void)0)
 #endif
 
-#if QUILL_ACTIVE_LEVEL <= QUILL_LEVEL_WARN
-#define QUILL_LOGGER_WARN(logger, ...) QUILL_LOGGER_CALL(logger, quill::level::warn, __VA_ARGS__)
+#if ZEST_ACTIVE_LEVEL <= ZEST_LEVEL_WARN
+#define ZEST_LOGGER_WARN(logger, ...) ZEST_LOGGER_CALL(logger, zest::level::warn, __VA_ARGS__)
 #else
-#define QUILL_LOGGER_WARN(logger, ...) ((void)0)
+#define ZEST_LOGGER_WARN(logger, ...) ((void)0)
 #endif
 
-#if QUILL_ACTIVE_LEVEL <= QUILL_LEVEL_ERROR
-#define QUILL_LOGGER_ERROR(logger, ...) QUILL_LOGGER_CALL(logger, quill::level::error, __VA_ARGS__)
+#if ZEST_ACTIVE_LEVEL <= ZEST_LEVEL_ERROR
+#define ZEST_LOGGER_ERROR(logger, ...) ZEST_LOGGER_CALL(logger, zest::level::error, __VA_ARGS__)
 #else
-#define QUILL_LOGGER_ERROR(logger, ...) ((void)0)
+#define ZEST_LOGGER_ERROR(logger, ...) ((void)0)
 #endif
 
-#if QUILL_ACTIVE_LEVEL <= QUILL_LEVEL_CRITICAL
-#define QUILL_LOGGER_CRITICAL(logger, ...)                                                         \
-  QUILL_LOGGER_CALL(logger, quill::level::critical, __VA_ARGS__)
+#if ZEST_ACTIVE_LEVEL <= ZEST_LEVEL_CRITICAL
+#define ZEST_LOGGER_CRITICAL(logger, ...)                                                          \
+  ZEST_LOGGER_CALL(logger, zest::level::critical, __VA_ARGS__)
 #else
-#define QUILL_LOGGER_CRITICAL(logger, ...) ((void)0)
+#define ZEST_LOGGER_CRITICAL(logger, ...) ((void)0)
 #endif
 
 // Default-logger variants.
-#define QUILL_TRACE(...) QUILL_LOGGER_TRACE(quill::default_logger(), __VA_ARGS__)
-#define QUILL_DEBUG(...) QUILL_LOGGER_DEBUG(quill::default_logger(), __VA_ARGS__)
-#define QUILL_INFO(...) QUILL_LOGGER_INFO(quill::default_logger(), __VA_ARGS__)
-#define QUILL_WARN(...) QUILL_LOGGER_WARN(quill::default_logger(), __VA_ARGS__)
-#define QUILL_ERROR(...) QUILL_LOGGER_ERROR(quill::default_logger(), __VA_ARGS__)
-#define QUILL_CRITICAL(...) QUILL_LOGGER_CRITICAL(quill::default_logger(), __VA_ARGS__)
+#define ZEST_TRACE(...) ZEST_LOGGER_TRACE(zest::default_logger(), __VA_ARGS__)
+#define ZEST_DEBUG(...) ZEST_LOGGER_DEBUG(zest::default_logger(), __VA_ARGS__)
+#define ZEST_INFO(...) ZEST_LOGGER_INFO(zest::default_logger(), __VA_ARGS__)
+#define ZEST_WARN(...) ZEST_LOGGER_WARN(zest::default_logger(), __VA_ARGS__)
+#define ZEST_ERROR(...) ZEST_LOGGER_ERROR(zest::default_logger(), __VA_ARGS__)
+#define ZEST_CRITICAL(...) ZEST_LOGGER_CRITICAL(zest::default_logger(), __VA_ARGS__)
 
-namespace quill {
+namespace zest {
 
 // ---------------------------------------------------------------------------
 // Sink factories
@@ -179,4 +179,4 @@ inline std::shared_ptr<async_logger> file_logger_async(const std::string& name,
   return create_async_logger(name, queue_size, backend_threads, basic_file_sink(filename));
 }
 
-} // namespace quill
+} // namespace zest

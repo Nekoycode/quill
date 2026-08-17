@@ -25,9 +25,9 @@
       "description": "Debug build with tests, examples and warnings-as-errors enabled.",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "QUILL_BUILD_TESTS": "ON",
-        "QUILL_BUILD_EXAMPLES": "ON",
-        "QUILL_WARNINGS_AS_ERRORS": "ON"
+        "ZEST_BUILD_TESTS": "ON",
+        "ZEST_BUILD_EXAMPLES": "ON",
+        "ZEST_WARNINGS_AS_ERRORS": "ON"
       }
     },
     {
@@ -36,7 +36,7 @@
       "displayName": "Debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "QUILL_BUILD_TESTS": "ON"
+        "ZEST_BUILD_TESTS": "ON"
       }
     },
     {
@@ -45,7 +45,7 @@
       "displayName": "Release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "QUILL_BUILD_TESTS": "ON"
+        "ZEST_BUILD_TESTS": "ON"
       }
     },
     {
@@ -54,7 +54,7 @@
       "displayName": "RelWithDebInfo",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "QUILL_BUILD_TESTS": "ON"
+        "ZEST_BUILD_TESTS": "ON"
       }
     },
     {
@@ -64,9 +64,9 @@
       "description": "Release build with only benchmarks enabled (no dependency fetch).",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "QUILL_BUILD_TESTS": "OFF",
-        "QUILL_BUILD_EXAMPLES": "OFF",
-        "QUILL_BUILD_BENCHMARKS": "ON"
+        "ZEST_BUILD_TESTS": "OFF",
+        "ZEST_BUILD_EXAMPLES": "OFF",
+        "ZEST_BUILD_BENCHMARKS": "ON"
       }
     },
     {
@@ -76,8 +76,8 @@
       "description": "Configure preset used by GitHub Actions (BUILD_TYPE from env).",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "$env{BUILD_TYPE}",
-        "QUILL_BUILD_TESTS": "ON",
-        "QUILL_BUILD_EXAMPLES": "OFF"
+        "ZEST_BUILD_TESTS": "ON",
+        "ZEST_BUILD_EXAMPLES": "OFF"
       }
     },
     {

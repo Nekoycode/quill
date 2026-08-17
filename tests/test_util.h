@@ -6,14 +6,14 @@
 #include <iterator>
 #include <string>
 
-namespace quill::test {
+namespace zest::test {
 
 // RAII temporary directory, removed on destruction.
 class temp_dir {
 public:
   temp_dir() {
     const auto suffix = std::chrono::steady_clock::now().time_since_epoch().count();
-    path_ = std::filesystem::temp_directory_path() / ("quill_test_" + std::to_string(suffix));
+    path_ = std::filesystem::temp_directory_path() / ("zest_test_" + std::to_string(suffix));
     std::filesystem::create_directories(path_);
   }
 
@@ -35,4 +35,4 @@ inline std::string read_file(const std::string& path) {
   return std::string(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
 }
 
-} // namespace quill::test
+} // namespace zest::test

@@ -6,8 +6,8 @@
 #include <string>
 #include <thread>
 
-#include <quill/common.h>
-#include <quill/level.h>
+#include <zest/common.h>
+#include <zest/level.h>
 
 #ifdef _WIN32
 #include <io.h>
@@ -17,7 +17,7 @@
 #include <unistd.h>
 #endif
 
-namespace quill::detail {
+namespace zest::detail {
 
 // Decomposed local time, ready for pattern formatting.
 struct tm_fields {
@@ -145,4 +145,4 @@ inline void enable_windows_ansi() {
 }
 #endif
 
-} // namespace quill::detail
+} // namespace zest::detail

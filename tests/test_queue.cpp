@@ -6,16 +6,16 @@
 #include <thread>
 #include <vector>
 
-#include <quill/detail/blocking_queue.h>
+#include <zest/detail/blocking_queue.h>
 
 #include "test_config.h"
 
 TEST_CASE("mpmc queue preserves SPSC order") {
-  quill::detail::mpmc_bounded_queue<std::uint64_t> q(1024);
-  for (int i = 0; i < QUILL_TEST_ITERS(1000); ++i) {
+  zest::detail::mpmc_bounded_queue<std::uint64_t> q(1024);
+  for (int i = 0; i < ZEST_TEST_ITERS(1000); ++i) {
     REQUIRE(q.try_enqueue(std::uint64_t(i)));
   }
-  for (int i = 0; i < QUILL_TEST_ITERS(1000); ++i) {
+  for (int i = 0; i < ZEST_TEST_ITERS(1000); ++i) {
     std::uint64_t v = 0;
     REQUIRE(q.try_dequeue(v));
     CHECK(v == static_cast<std::uint64_t>(i));
@@ -24,7 +24,7 @@ TEST_CASE("mpmc queue preserves SPSC order") {
 }
 
 TEST_CASE("mpmc queue reports full and empty") {
-  quill::detail::mpmc_bounded_queue<std::uint64_t> q(4); // rounded up to a power of two
+  zest::detail::mpmc_bounded_queue<std::uint64_t> q(4); // rounded up to a power of two
   CHECK(q.empty());
   for (int i = 0; i < 4; ++i) {
     CHECK(q.try_enqueue(std::uint64_t(i)));
@@ -38,9 +38,9 @@ TEST_CASE("mpmc queue reports full and empty") {
 }
 
 TEST_CASE("mpmc queue MPMC loses nothing and duplicates nothing") {
-  quill::detail::mpmc_bounded_queue<std::uint64_t> q(1024);
+  zest::detail::mpmc_bounded_queue<std::uint64_t> q(1024);
   constexpr int producers = 4;
-  constexpr int per = QUILL_TEST_ITERS(5000);
+  constexpr int per = ZEST_TEST_ITERS(5000);
   constexpr std::size_t total = static_cast<std::size_t>(producers) * per;
 
   std::atomic<bool> done{false};
@@ -82,7 +82,7 @@ TEST_CASE("mpmc queue MPMC loses nothing and duplicates nothing") {
 }
 
 TEST_CASE("blocking queue round-trips with a consumer thread") {
-  quill::detail::blocking_queue<std::uint64_t> q(16);
+  zest::detail::blocking_queue<std::uint64_t> q(16);
 
   std::vector<std::uint64_t> got;
   std::thread consumer([&q, &got] {

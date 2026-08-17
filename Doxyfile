@@ -1,8 +1,8 @@
-# Minimal Doxygen configuration for quill. Generate with:
+# Minimal Doxygen configuration for zest. Generate with:
 #   cmake --build . --target docs
 # or: doxygen Doxyfile
 
-PROJECT_NAME           = "quill"
+PROJECT_NAME           = "zest"
 PROJECT_NUMBER         = "0.1.0"
 PROJECT_BRIEF          = "A lightweight, customizable, thread-safe C++20 logging library"
 

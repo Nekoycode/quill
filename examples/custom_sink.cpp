@@ -1,4 +1,4 @@
-#include <quill/quill.h>
+#include <zest/zest.h>
 
 #include <iostream>
 #include <mutex>
@@ -8,7 +8,7 @@
 
 // Minimal custom sink that collects lines into a vector instead of writing
 // them to an I/O destination.
-class vector_sink final : public quill::sinks::sink {
+class vector_sink final : public zest::sinks::sink {
 public:
   void flush() override {}
 
@@ -31,11 +31,11 @@ private:
 
 int main() {
   auto sink = std::make_shared<vector_sink>();
-  auto logger = quill::create_logger("custom", sink);
+  auto logger = zest::create_logger("custom", sink);
   logger->set_pattern("%L: %v");
 
-  QUILL_LOGGER_INFO(logger, "collected {}", 1);
-  QUILL_LOGGER_ERROR(logger, "collected {}", 2);
+  ZEST_LOGGER_INFO(logger, "collected {}", 1);
+  ZEST_LOGGER_ERROR(logger, "collected {}", 2);
 
   logger->flush();
   sink->print_all();

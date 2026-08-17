@@ -1,5 +1,5 @@
 foreach(example IN ITEMS basic async custom_sink)
-  add_executable(quill_${example} ${example}.cpp)
-  target_link_libraries(quill_${example} PRIVATE quill::quill)
-  quill_set_warnings(quill_${example})
+  add_executable(zest_${example} ${example}.cpp)
+  target_link_libraries(zest_${example} PRIVATE zest::zest)
+  zest_set_warnings(zest_${example})
 endforeach()

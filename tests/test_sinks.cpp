@@ -3,54 +3,54 @@
 #include <filesystem>
 #include <string>
 
-#include <quill/quill.h>
+#include <zest/zest.h>
 
 #include "test_util.h"
 
 namespace fs = std::filesystem;
 
 TEST_CASE("basic_file_sink writes and truncates") {
-  quill::test::temp_dir td;
+  zest::test::temp_dir td;
   const std::string path = td.file("basic.log");
 
   {
-    auto lg = quill::file_logger("f", path, /*truncate=*/true);
+    auto lg = zest::file_logger("f", path, /*truncate=*/true);
     lg->set_pattern("%v");
     lg->info("hello");
     lg->info("world");
     lg->flush();
   } // destructor closes the file
 
-  CHECK(quill::test::read_file(path) == "hello\nworld\n");
+  CHECK(zest::test::read_file(path) == "hello\nworld\n");
 }
 
 TEST_CASE("basic_file_sink appends by default") {
-  quill::test::temp_dir td;
+  zest::test::temp_dir td;
   const std::string path = td.file("append.log");
 
   {
-    auto lg = quill::file_logger("f", path, false);
+    auto lg = zest::file_logger("f", path, false);
     lg->set_pattern("%v");
     lg->info("first");
     lg->flush();
   }
   {
-    auto lg = quill::file_logger("f", path, false);
+    auto lg = zest::file_logger("f", path, false);
     lg->set_pattern("%v");
     lg->info("second");
     lg->flush();
   }
 
-  CHECK(quill::test::read_file(path) == "first\nsecond\n");
+  CHECK(zest::test::read_file(path) == "first\nsecond\n");
 }
 
 TEST_CASE("rotating_file_sink rotates by size") {
-  quill::test::temp_dir td;
+  zest::test::temp_dir td;
   const std::string path = td.file("rot.log");
 
   {
-    auto sink = quill::rotating_file_sink(path, /*max_size=*/20, /*max_files=*/3);
-    auto lg = quill::create_logger("rot", sink);
+    auto sink = zest::rotating_file_sink(path, /*max_size=*/20, /*max_files=*/3);
+    auto lg = zest::create_logger("rot", sink);
     lg->set_pattern("%v");
     for (int i = 0; i < 20; ++i) {
       lg->info("line number {}", i);
@@ -62,12 +62,12 @@ TEST_CASE("rotating_file_sink rotates by size") {
 }
 
 TEST_CASE("rolling_file_sink rotates by size and keeps max_files") {
-  quill::test::temp_dir td;
+  zest::test::temp_dir td;
   const std::string path = td.file("roll.log");
 
   {
-    auto sink = quill::rolling_file_sink(path, /*max_size=*/20, /*max_files=*/2);
-    auto lg = quill::create_logger("roll", sink);
+    auto sink = zest::rolling_file_sink(path, /*max_size=*/20, /*max_files=*/2);
+    auto lg = zest::create_logger("roll", sink);
     lg->set_pattern("%v");
     for (int i = 0; i < 20; ++i) {
       lg->info("line number {}", i);
@@ -81,12 +81,12 @@ TEST_CASE("rolling_file_sink rotates by size and keeps max_files") {
 }
 
 TEST_CASE("daily_file_sink writes to a dated file") {
-  quill::test::temp_dir td;
+  zest::test::temp_dir td;
   const std::string base = td.file("daily");
 
   {
-    auto sink = quill::daily_file_sink(base);
-    auto lg = quill::create_logger("daily", sink);
+    auto sink = zest::daily_file_sink(base);
+    auto lg = zest::create_logger("daily", sink);
     lg->set_pattern("%v");
     lg->info("today");
     lg->flush();
@@ -104,16 +104,16 @@ TEST_CASE("daily_file_sink writes to a dated file") {
 }
 
 TEST_CASE("json_sink emits structured records") {
-  quill::test::temp_dir td;
+  zest::test::temp_dir td;
   const std::string path = td.file("out.json");
 
   {
-    auto lg = quill::create_logger("json", quill::json_sink(path));
+    auto lg = zest::create_logger("json", zest::json_sink(path));
     lg->info("hello {}", "json");
     lg->flush();
   }
 
-  const std::string content = quill::test::read_file(path);
+  const std::string content = zest::test::read_file(path);
   CHECK(content.find("\"level\":\"info\"") != std::string::npos);
   CHECK(content.find("\"message\":\"hello json\"") != std::string::npos);
   CHECK(content.find("\"logger\":\"json\"") != std::string::npos);
@@ -123,15 +123,15 @@ TEST_CASE("json_sink emits structured records") {
 }
 
 TEST_CASE("json_sink escapes quotes in the message") {
-  quill::test::temp_dir td;
+  zest::test::temp_dir td;
   const std::string path = td.file("esc.json");
 
   {
-    auto lg = quill::create_logger("json", quill::json_sink(path));
+    auto lg = zest::create_logger("json", zest::json_sink(path));
     lg->info("say \"hi\"");
     lg->flush();
   }
 
-  const std::string content = quill::test::read_file(path);
+  const std::string content = zest::test::read_file(path);
   CHECK(content.find("\\\"hi\\\"") != std::string::npos);
 }

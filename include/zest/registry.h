@@ -5,12 +5,12 @@
 #include <string>
 #include <unordered_map>
 
-#include <quill/common.h>
-#include <quill/logger.h>
-#include <quill/sink.h>
-#include <quill/sinks/console_sink.h>
+#include <zest/common.h>
+#include <zest/logger.h>
+#include <zest/sink.h>
+#include <zest/sinks/console_sink.h>
 
-namespace quill {
+namespace zest {
 
 // Global registry of named loggers. A Meyers singleton provides thread-safe,
 // lazy initialization; the operations themselves are mutex-guarded.
@@ -98,32 +98,32 @@ private:
 
 // -- Free functions ---------------------------------------------------------
 
-QUILL_INLINE std::shared_ptr<logger> get_logger(const std::string& name) {
+ZEST_INLINE std::shared_ptr<logger> get_logger(const std::string& name) {
   return registry::instance().get(name);
 }
 
-QUILL_INLINE std::shared_ptr<logger> default_logger() {
+ZEST_INLINE std::shared_ptr<logger> default_logger() {
   return registry::instance().default_logger();
 }
 
-QUILL_INLINE void set_default_logger(std::shared_ptr<logger> l) {
+ZEST_INLINE void set_default_logger(std::shared_ptr<logger> l) {
   registry::instance().set_default_logger(std::move(l));
 }
 
-QUILL_INLINE void drop_logger(const std::string& name) {
+ZEST_INLINE void drop_logger(const std::string& name) {
   registry::instance().drop(name);
 }
 
-QUILL_INLINE void drop_all() {
+ZEST_INLINE void drop_all() {
   registry::instance().drop_all();
 }
 
-QUILL_INLINE void flush_all() {
+ZEST_INLINE void flush_all() {
   registry::instance().flush_all();
 }
 
-QUILL_INLINE void shutdown() {
+ZEST_INLINE void shutdown() {
   registry::instance().shutdown();
 }
 
-} // namespace quill
+} // namespace zest
