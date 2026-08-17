@@ -200,6 +200,19 @@ target_link_libraries(my_app PRIVATE zest::zest)
 Or via FetchContent / `add_subdirectory` — `zest::zest` is an INTERFACE
 (header-only) target.
 
+### mcpp
+
+An alternative build entry is provided via [`mcpp.toml`](mcpp.toml) for the
+[mcpp](https://github.com/mcpp-community/mcpp) build tool. It compiles the
+header-only library as a traditional C++20 `lib` target:
+
+```bash
+mcpp build
+```
+
+(This entry point builds the library for validation; as a header-only library,
+consumers simply `#include <zest/zest.h>`.)
+
 ## Benchmarks
 
 Self-contained micro-benchmarks live in `benchmarks/`:

@@ -1,0 +1,14 @@
+[package]
+name        = "zest"
+version     = "0.1.0"
+description = "A lightweight, customizable, thread-safe C++20 logging library"
+license     = "MIT"
+standard    = "c++20"
+
+# zest is a header-only library; the lib target compiles a stub TU that simply
+# includes the umbrella header, validating that the public headers build.
+[targets.zest]
+kind = "lib"
+
+[build]
+include_dirs = ["include"]

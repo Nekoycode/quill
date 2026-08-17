@@ -10,9 +10,12 @@ CMakeUserPresets.json
 # Compiler database
 compile_commands.json
 
-# mcpp (secondary build tool, to be added later)
+# mcpp (secondary build tool)
 /target/
 /.mcpp/
+
+# Local tooling downloads (mcpp binary + sandbox, not part of the repo)
+/.tools/
 
 # Editors / IDEs
 .vscode/
