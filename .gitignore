@@ -13,6 +13,7 @@ compile_commands.json
 # mcpp (secondary build tool)
 /target/
 /.mcpp/
+/.mcpp-home/
 
 # Local tooling downloads (mcpp binary + sandbox, not part of the repo)
 /.tools/
