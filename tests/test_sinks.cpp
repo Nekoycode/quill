@@ -135,3 +135,20 @@ TEST_CASE("json_sink escapes quotes in the message") {
   const std::string content = zest::test::read_file(path);
   CHECK(content.find("\\\"hi\\\"") != std::string::npos);
 }
+
+TEST_CASE("file sinks throw on fopen failure") {
+  zest::test::temp_dir td;
+  const std::string bad_path = td.file("missing_dir") + "/nope.log";
+
+  CHECK_THROWS_AS(zest::basic_file_sink(bad_path), std::runtime_error);
+  CHECK_THROWS_AS(zest::rolling_file_sink(bad_path, 1024, 3), std::runtime_error);
+  CHECK_THROWS_AS(zest::daily_file_sink(td.file("missing_dir") + "/daily"), std::runtime_error);
+}
+
+TEST_CASE("daily_file_sink validates the rollover time") {
+  zest::test::temp_dir td;
+  CHECK_THROWS_AS(zest::daily_file_sink(td.file("daily"), /*rotation_hour=*/25),
+                  std::invalid_argument);
+  CHECK_THROWS_AS(zest::daily_file_sink(td.file("daily"), 0, /*rotation_minute=*/60),
+                  std::invalid_argument);
+}

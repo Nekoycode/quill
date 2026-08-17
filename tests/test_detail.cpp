@@ -41,3 +41,19 @@ TEST_CASE("deferred_message formats the captured arguments on demand") {
   d.format_into(out);
   CHECK(out == "value=42 and ok");
 }
+
+TEST_CASE("small_buffer operator+= char and string_view") {
+  zest::detail::small_buffer<16> b;
+  b += 'a';
+  b += std::string_view("bc");
+  const std::string out(b.view());
+  CHECK(out == "abc");
+}
+
+TEST_CASE("small_buffer append with explicit length across overflow") {
+  zest::detail::small_buffer<8> b;
+  b.append("xyzw", 4);
+  b.append("0123456789", 10); // overflows to heap
+  const std::string out(b.view());
+  CHECK(out == "xyzw0123456789");
+}

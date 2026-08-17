@@ -13,7 +13,7 @@ public:
   void flush() override {}
 
   void print_all() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::scoped_lock lock(mutex_);
     for (const auto& line : lines_) {
       std::cout << line;
     }
@@ -21,7 +21,7 @@ public:
 
 protected:
   void write_output(std::string_view line) override {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::scoped_lock lock(mutex_);
     lines_.emplace_back(line);
   }
 
