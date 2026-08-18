@@ -122,3 +122,84 @@ TEST_CASE("pattern formatter color flags emit ANSI codes") {
   CHECK(out.find("\033[") != std::string::npos); // some ANSI escape
   CHECK(out.find("boom") != std::string::npos);
 }
+
+// --- zest-native brace-field syntax ({field}) ---
+
+TEST_CASE("brace fields render level and message") {
+  zest::pattern_formatter pf("{level} {msg}");
+  CHECK(render(pf, make_msg(zest::level::warn, "hello")) == "warn hello");
+}
+
+TEST_CASE("brace fields render logger name and short level") {
+  zest::pattern_formatter pf("[{level_short}] {logger}: {message}");
+  CHECK(render(pf, make_msg(zest::level::critical, "boom")) == "[C] test: boom");
+}
+
+TEST_CASE("brace and percent syntaxes can be mixed") {
+  zest::pattern_formatter pf("[%l] {logger}: %v");
+  CHECK(render(pf, make_msg(zest::level::warn, "hi")) == "[W] test: hi");
+}
+
+TEST_CASE("brace escapes produce literal braces") {
+  zest::pattern_formatter pf("{{msg}} {msg}");
+  CHECK(render(pf, make_msg(zest::level::info, "hi")) == "{msg} hi");
+}
+
+TEST_CASE("unknown brace field is preserved verbatim") {
+  zest::pattern_formatter pf("{bogus} {msg}");
+  CHECK(render(pf, make_msg(zest::level::info, "hi")) == "{bogus} hi");
+}
+
+TEST_CASE("trailing lone brace is literal") {
+  zest::pattern_formatter pf("{msg} {");
+  CHECK(render(pf, make_msg(zest::level::info, "hi")) == "hi {");
+}
+
+TEST_CASE("composite brace fields date/time/datetime have the expected shape") {
+  {
+    zest::pattern_formatter pf("{date}");
+    const std::string out = render(pf, make_msg(zest::level::info, ""));
+    CHECK(out.size() == 10); // YYYY-MM-DD
+    CHECK(out[4] == '-');
+    CHECK(out[7] == '-');
+  }
+  {
+    zest::pattern_formatter pf("{time}");
+    const std::string out = render(pf, make_msg(zest::level::info, ""));
+    CHECK(out.size() == 12); // HH:MM:SS.mmm
+    CHECK(out[2] == ':');
+    CHECK(out[5] == ':');
+    CHECK(out[8] == '.');
+  }
+  {
+    zest::pattern_formatter pf("{datetime}");
+    const std::string out = render(pf, make_msg(zest::level::info, ""));
+    CHECK(out.size() == 23); // date + ' ' + time
+    CHECK(out[10] == ' ');
+  }
+}
+
+TEST_CASE("brace datetime matches the equivalent percent pattern") {
+  zest::pattern_formatter brace("{date} {time}");
+  zest::pattern_formatter pct("%Y-%m-%d %H:%M:%S.%e");
+  const auto msg = make_msg(zest::level::info, "");
+  CHECK(render(brace, msg) == render(pct, msg));
+}
+
+TEST_CASE("brace source fields render basename:line, line and func") {
+  zest::pattern_formatter pf("{src}|{line}|{func}|{msg}");
+  zest::log_msg m = make_msg(zest::level::info, "x");
+  m.loc = zest::source_loc::current();
+  const std::string out = render(pf, m);
+  CHECK(out.find("test_pattern_formatter.cpp:") != std::string::npos);
+  CHECK(out.find('|') != std::string::npos);
+  CHECK(out.find("|x") != std::string::npos);
+}
+
+TEST_CASE("brace color fields emit ANSI codes when enabled") {
+  zest::pattern_formatter pf("{color_start}{msg}{color_end}");
+  pf.set_color(true);
+  const std::string out = render(pf, make_msg(zest::level::error, "boom"));
+  CHECK(out.find("\033[") != std::string::npos);
+  CHECK(out.find("boom") != std::string::npos);
+}

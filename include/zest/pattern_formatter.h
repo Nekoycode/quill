@@ -11,9 +11,10 @@
 
 namespace zest {
 
-// Formats log records according to a spdlog-style pattern string.
+// Formats log records according to a pattern string. Two interchangeable
+// syntaxes are supported and may be mixed in one pattern:
 //
-// Supported flags (single character after '%'):
+// 1. spdlog-style %-flags (single character after '%'):
 //   %Y  year (4 digits)      %m  month (01-12)        %b  month short name
 //   %d  day (01-31)          %a  weekday short name   %H  hour 24h (00-23)
 //   %I  hour 12h (01-12)     %M  minute (00-59)       %S  second (00-59)
@@ -22,6 +23,17 @@ namespace zest {
 //   %P  process id           %s  source (basename:line) %g source file path
 //   %#  source line          %!  source function      %v  message text
 //   %^  start color          %$  end color            %%  literal '%'
+//
+// 2. zest-native brace fields (a whole word in '{' ... '}'), distinct from both
+//    spdlog's %-flags and quill's %(named) placeholders:
+//   {msg} / {message}        message text            {level}     level full name
+//   {level_short}            level short char        {logger}/{name} logger name
+//   {thread} / {tid}         thread id               {pid}       process id
+//   {date}                   YYYY-MM-DD               {time}      HH:MM:SS.mmm
+//   {datetime}               date + ' ' + time        {src}       source (basename:line)
+//   {path}                   source file path         {line}      source line
+//   {func}                   source function          {color_start}/{color_end} color range
+//   Use '{{' and '}}' for literal braces. Unknown {fields} are kept verbatim.
 class pattern_formatter final : public formatter {
 public:
   explicit pattern_formatter(std::string pattern = "%^[%Y-%m-%d %H:%M:%S.%e] [%l] [%n] [%t] %v%$")
@@ -260,33 +272,165 @@ private:
 
     for (std::size_t i = 0; i < pattern_.size(); ++i) {
       const char c = pattern_[i];
-      if (c != '%') {
-        literal.push_back(c);
+
+      // zest-native brace fields: {field}, with '{{' / '}}' as literal escapes.
+      if (c == '{') {
+        if (i + 1 < pattern_.size() && pattern_[i + 1] == '{') {
+          literal.push_back('{');
+          ++i;
+          continue;
+        }
+        const std::size_t close = pattern_.find('}', i + 1);
+        if (close == std::string::npos) {
+          literal.push_back('{'); // unterminated '{': keep literally
+          continue;
+        }
+        flush_literal();
+        const std::string_view field(pattern_.data() + i + 1, close - i - 1);
+        if (!expand_field(field)) {
+          // Unknown field: preserve it verbatim.
+          items_.push_back({flag::literal, "{" + std::string(field) + "}"});
+        }
+        i = close;
         continue;
       }
-      if (i + 1 >= pattern_.size()) {
-        literal.push_back('%');
-        break;
-      }
-      const char n = pattern_[++i];
-      if (n == '%') {
-        literal.push_back('%');
+      if (c == '}') {
+        if (i + 1 < pattern_.size() && pattern_[i + 1] == '}') {
+          literal.push_back('}');
+          ++i;
+          continue;
+        }
+        literal.push_back('}'); // a lone '}' is literal
         continue;
       }
-      const flag f = flag_for(n);
-      if (f == flag::none) {
-        // Unknown flag: preserve it literally.
-        literal.push_back('%');
-        literal.push_back(n);
+
+      // spdlog-style %-flags.
+      if (c == '%') {
+        if (i + 1 >= pattern_.size()) {
+          literal.push_back('%');
+          break;
+        }
+        const char n = pattern_[++i];
+        if (n == '%') {
+          literal.push_back('%');
+          continue;
+        }
+        const flag f = flag_for(n);
+        if (f == flag::none) {
+          // Unknown flag: preserve it literally.
+          literal.push_back('%');
+          literal.push_back(n);
+          continue;
+        }
+        if (is_time_flag(f)) {
+          has_time_flag_ = true;
+        }
+        flush_literal();
+        items_.push_back({f, std::string(1, n)});
         continue;
       }
+
+      literal.push_back(c);
+    }
+    flush_literal();
+  }
+
+  // Expand a {field} (zest-native brace syntax) into pattern items, appending
+  // to items_. Returns false when the name is not a recognized field.
+  bool expand_field(std::string_view name) {
+    auto emit = [&](flag f) {
       if (is_time_flag(f)) {
         has_time_flag_ = true;
       }
-      flush_literal();
-      items_.push_back({f, std::string(1, n)});
+      items_.push_back({f, {}});
+    };
+    auto text = [&](std::string_view s) { items_.push_back({flag::literal, std::string(s)}); };
+
+    if (name == "msg" || name == "message") {
+      emit(flag::message);
+      return true;
     }
-    flush_literal();
+    if (name == "level") {
+      emit(flag::level_full);
+      return true;
+    }
+    if (name == "level_short") {
+      emit(flag::level_short);
+      return true;
+    }
+    if (name == "logger" || name == "name") {
+      emit(flag::logger_name);
+      return true;
+    }
+    if (name == "thread" || name == "tid") {
+      emit(flag::thread_id);
+      return true;
+    }
+    if (name == "pid") {
+      emit(flag::process_id);
+      return true;
+    }
+    if (name == "src") {
+      emit(flag::source_short);
+      return true;
+    }
+    if (name == "path") {
+      emit(flag::source_file);
+      return true;
+    }
+    if (name == "line") {
+      emit(flag::source_line);
+      return true;
+    }
+    if (name == "func") {
+      emit(flag::source_func);
+      return true;
+    }
+    if (name == "color_start") {
+      emit(flag::color_start);
+      return true;
+    }
+    if (name == "color_end") {
+      emit(flag::color_end);
+      return true;
+    }
+
+    // Composite time fields expand into the granular flags.
+    if (name == "date") {
+      emit(flag::year);
+      text("-");
+      emit(flag::month);
+      text("-");
+      emit(flag::day);
+      return true;
+    }
+    if (name == "time") {
+      emit(flag::hour_24);
+      text(":");
+      emit(flag::minute);
+      text(":");
+      emit(flag::second);
+      text(".");
+      emit(flag::millis);
+      return true;
+    }
+    if (name == "datetime") {
+      emit(flag::year);
+      text("-");
+      emit(flag::month);
+      text("-");
+      emit(flag::day);
+      text(" ");
+      emit(flag::hour_24);
+      text(":");
+      emit(flag::minute);
+      text(":");
+      emit(flag::second);
+      text(".");
+      emit(flag::millis);
+      return true;
+    }
+    return false;
   }
 
   std::string pattern_;
