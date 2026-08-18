@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string_view>
 
 #include <zest/common.h>
@@ -38,6 +39,37 @@ ZEST_NODISCARD constexpr std::string_view to_string_view(level lvl) noexcept {
   default:
     return "???"sv;
   }
+}
+
+// Inverse of `to_string_view`: parse a level name (canonical, lowercase) into a
+// `level`. Accepts the "warning" alias for `warn`. Returns `std::nullopt` for
+// anything unrecognized, so callers decide the fallback. Useful for reading a
+// level from a config file or CLI flag. Match is exact (lowercase); normalize
+// case/whitespace before calling if your input source is not.
+ZEST_NODISCARD constexpr std::optional<level> from_string_view(std::string_view name) noexcept {
+  using namespace std::string_view_literals;
+  if (name == "trace"sv) {
+    return level::trace;
+  }
+  if (name == "debug"sv) {
+    return level::debug;
+  }
+  if (name == "info"sv) {
+    return level::info;
+  }
+  if (name == "warn"sv || name == "warning"sv) {
+    return level::warn;
+  }
+  if (name == "error"sv) {
+    return level::error;
+  }
+  if (name == "critical"sv) {
+    return level::critical;
+  }
+  if (name == "off"sv) {
+    return level::off;
+  }
+  return std::nullopt;
 }
 
 ZEST_NODISCARD constexpr char short_level(level lvl) noexcept {

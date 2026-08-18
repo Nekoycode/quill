@@ -62,3 +62,21 @@ TEST_CASE("logger supports multiple arguments and runtime format strings") {
   CHECK(lines[0] == "1 + 2 = 3\n");
   CHECK(lines[1] == "runtime ok 7\n");
 }
+
+TEST_CASE("default-logger free functions forward to the default logger") {
+  zest::drop_all();
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  auto dl = zest::create_logger("ff-default", cs);
+  dl->set_pattern("%v");
+  zest::set_default_logger(dl);
+
+  zest::info("hello {}", 42);
+  zest::warn("careful");
+
+  const auto lines = cs->lines();
+  REQUIRE(lines.size() == 2);
+  CHECK(lines[0] == "hello 42\n");
+  CHECK(lines[1] == "careful\n");
+
+  zest::drop_all(); // reset so later tests get a fresh lazy default logger
+}

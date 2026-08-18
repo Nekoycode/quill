@@ -33,3 +33,35 @@ TEST_CASE("short level covers every level and invalid input") {
   CHECK(zest::short_level(zest::level::critical) == 'C');
   CHECK(zest::short_level(zest::level::n_levels) == '?');
 }
+
+TEST_CASE("from_string_view parses canonical names and the warning alias") {
+  auto as_int = [](std::string_view s) {
+    auto r = zest::from_string_view(s);
+    return r ? static_cast<int>(*r) : -1;
+  };
+  CHECK(as_int("trace") == 0);
+  CHECK(as_int("debug") == 1);
+  CHECK(as_int("info") == 2);
+  CHECK(as_int("warn") == 3);
+  CHECK(as_int("warning") == 3);
+  CHECK(as_int("error") == 4);
+  CHECK(as_int("critical") == 5);
+  CHECK(as_int("off") == 6);
+}
+
+TEST_CASE("from_string_view rejects unknown input") {
+  CHECK(!zest::from_string_view("").has_value());
+  CHECK(!zest::from_string_view("verbose").has_value());
+  CHECK(!zest::from_string_view("INFO").has_value()); // exact lowercase match by design
+  CHECK(!zest::from_string_view("n_levels").has_value());
+}
+
+TEST_CASE("from_string_view is the inverse of to_string_view") {
+  for (zest::level lvl :
+       {zest::level::trace, zest::level::debug, zest::level::info, zest::level::warn,
+        zest::level::error, zest::level::critical, zest::level::off}) {
+    auto parsed = zest::from_string_view(zest::to_string_view(lvl));
+    REQUIRE(parsed.has_value());
+    CHECK(static_cast<int>(*parsed) == static_cast<int>(lvl));
+  }
+}

@@ -5,8 +5,11 @@ description = "A lightweight, customizable, thread-safe C++20 logging library"
 license     = "MIT"
 standard    = "c++20"
 
-# zest is a header-only library; the lib target compiles a stub TU that simply
-# includes the umbrella header, validating that the public headers build.
+# zest is a header-only library. The lib target compiles src/zest.cppm, the
+# C++20 module interface (`export module zest;`), which includes the umbrella
+# header in its global module fragment and re-exports the public function API.
+# Note: C++ modules cannot export macros — ZEST_INFO etc. remain available only
+# via #include <zest/zest.h>.
 [targets.zest]
 kind = "lib"
 

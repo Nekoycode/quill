@@ -86,6 +86,40 @@
 namespace zest {
 
 // ---------------------------------------------------------------------------
+// Default-logger convenience functions
+//
+// Free-function equivalents of the ZEST_TRACE..ZEST_CRITICAL macros, logging to
+// the default logger. Unlike the macros they do not capture the call-site
+// source location (they behave exactly like the per-level member functions),
+// and they are not gated by ZEST_ACTIVE_LEVEL. They are also the natural entry
+// point for consumers of the `zest` C++20 module, which cannot see macros.
+// ---------------------------------------------------------------------------
+
+template <typename... Args> void trace(detail::format_string_t<Args...> fmt, Args&&... args) {
+  default_logger()->trace(fmt, std::forward<Args>(args)...);
+}
+
+template <typename... Args> void debug(detail::format_string_t<Args...> fmt, Args&&... args) {
+  default_logger()->debug(fmt, std::forward<Args>(args)...);
+}
+
+template <typename... Args> void info(detail::format_string_t<Args...> fmt, Args&&... args) {
+  default_logger()->info(fmt, std::forward<Args>(args)...);
+}
+
+template <typename... Args> void warn(detail::format_string_t<Args...> fmt, Args&&... args) {
+  default_logger()->warn(fmt, std::forward<Args>(args)...);
+}
+
+template <typename... Args> void error(detail::format_string_t<Args...> fmt, Args&&... args) {
+  default_logger()->error(fmt, std::forward<Args>(args)...);
+}
+
+template <typename... Args> void critical(detail::format_string_t<Args...> fmt, Args&&... args) {
+  default_logger()->critical(fmt, std::forward<Args>(args)...);
+}
+
+// ---------------------------------------------------------------------------
 // Sink factories
 // ---------------------------------------------------------------------------
 
