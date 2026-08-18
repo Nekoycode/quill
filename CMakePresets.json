@@ -106,6 +106,18 @@
         "CMAKE_CXX_FLAGS": "--coverage -O0",
         "CMAKE_EXE_LINKER_FLAGS": "--coverage"
       }
+    },
+    {
+      "name": "module",
+      "inherits": "base",
+      "displayName": "Module (C++20 import zest)",
+      "description": "Debug build with the C++20 module target and its consumer example (requires CMake >= 3.28 + Ninja + gcc>=16/clang>=17).",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ZEST_BUILD_MODULE": "ON",
+        "ZEST_BUILD_TESTS": "ON",
+        "ZEST_BUILD_EXAMPLES": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -117,7 +129,8 @@
     { "name": "ci", "configurePreset": "ci" },
     { "name": "asan", "configurePreset": "asan" },
     { "name": "tsan", "configurePreset": "tsan" },
-    { "name": "coverage", "configurePreset": "coverage" }
+    { "name": "coverage", "configurePreset": "coverage" },
+    { "name": "module", "configurePreset": "module" }
   ],
   "testPresets": [
     {

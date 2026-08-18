@@ -2,6 +2,8 @@
 
 #include <cstddef>
 #include <cstring>
+#include <memory>
+#include <new>
 #include <string>
 #include <string_view>
 #include <tuple>
