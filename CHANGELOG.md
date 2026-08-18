@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Default-logger convenience free functions
   `zest::trace`/`debug`/`info`/`warn`/`error`/`critical(fmt, args…)` — the
   function equivalents of the `ZEST_*` macros.
+- A native `{field}` brace pattern syntax (`{datetime} [{level}] {logger}:
+  {msg}`, …) alongside the spdlog-compatible `%`-flags — distinct from both
+  spdlog's `%` and quill's `%(named)`; `{{`/`}}` escape literal braces and the
+  two syntaxes mix freely in one pattern.
 - README mcpp build documentation, including first-build toolchain download
   behavior and China-network notes (gitcode CDN vs. GitHub release assets).
 

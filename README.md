@@ -10,6 +10,19 @@ captures arguments (allocation-free), while a background thread pool formats
 and performs the I/O. This deferred formatting makes the async path ~3× faster
 than spdlog's frontend-formatting async logger.
 
+The API is deliberately familiar, but zest is not a re-skin. Where it differs:
+
+- **std facilities, not macros, for metadata** — source locations use
+  `std::source_location` (spdlog captures `__FILE__`/`__LINE__`; quill captures
+  a static-constexpr metadata object).
+- **A different async engine** — a lock-free Vyukov MPMC queue feeding multiple
+  `std::jthread` backends (spdlog uses a mutex/CV global pool and formats on the
+  caller; quill uses per-thread SPSC queues with a single backend).
+- **A `{field}` brace pattern syntax** alongside the spdlog-compatible
+  `%`-flags — distinct from both spdlog's `%` and quill's `%(named)`.
+- **`json_sink` built in** (spdlog has none) and a **first-class C++20 module**
+  (`import zest;`) for both mcpp and CMake.
+
 ---
 
 ## Highlights
@@ -89,7 +102,7 @@ level are removed at the preprocessor stage.
 
 ### Pattern formatting
 
-Configure the output with `set_pattern`. Supported flags:
+Configure the output with `set_pattern`. Supported `%`-flags:
 
 | Flag | Meaning | Flag | Meaning |
 |---|---|---|---|
@@ -99,6 +112,25 @@ Configure the output with `set_pattern`. Supported flags:
 | `%t` `%P` | thread id / process id | `%v` | message text |
 | `%s` | source `file:line` | `%g` `%#` `%!` | file / line / function |
 | `%^` `%$` | start / end color | `%%` | literal `%` |
+
+zest also supports a native **brace-field** syntax — distinct from both spdlog's
+`%`-flags and quill's `%(named)` placeholders. The two syntaxes may be mixed in
+one pattern; `{{` and `}}` produce literal braces, and unknown `{fields}` are
+kept verbatim.
+
+| Field | Meaning | Field | Meaning |
+|---|---|---|---|
+| `{msg}` | message text | `{level}` / `{level_short}` | level full / short |
+| `{logger}` / `{name}` | logger name | `{thread}` / `{tid}` | thread id |
+| `{pid}` | process id | `{date}` | `YYYY-MM-DD` |
+| `{time}` | `HH:MM:SS.mmm` | `{datetime}` | date + time |
+| `{src}` | source `file:line` | `{path}` `{line}` `{func}` | path / line / function |
+| `{color_start}` `{color_end}` | color range | | |
+
+```cpp
+logger->set_pattern("{datetime} [{level}] {logger}: {msg}");
+// → 2026-08-18 20:30:01.123 [info] app: started
+```
 
 ### Runtime format strings
 

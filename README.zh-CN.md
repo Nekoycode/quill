@@ -8,6 +8,18 @@
 registry)与**前端/后端异步引擎**结合:热路径只捕获参数(零分配),由后台线程池完成
 格式化与 I/O。这种「延迟格式化」让异步路径比 spdlog 的前端格式化异步日志器快约 3 倍。
 
+API 刻意保持眼熟,但 zest 不是换个皮。它的不同点:
+
+- **元数据用标准设施而非宏** —— source location 用 `std::source_location`(spdlog 捕获
+  `__FILE__`/`__LINE__`;quill 捕获 static-constexpr 元数据)。
+- **一套不同的异步引擎** —— 无锁 Vyukov MPMC 队列喂给多个 `std::jthread` 后端
+  (spdlog 用互斥锁/条件变量的全局线程池、且在调用方格式化;quill 用每线程 SPSC 队列 +
+  单后端)。
+- **`{field}` 花括号 pattern 语法**,与 spdlog 兼容的 `%` 标志并存 —— 和 spdlog 的 `%`、
+  quill 的 `%(named)` 都不一样。
+- **内置 `json_sink`**(spdlog 没有),以及**一等 C++20 模块**(`import zest;`),mcpp 与
+  CMake 都支持。
+
 ---
 
 ## 特性
@@ -88,6 +100,24 @@ logger->set_level(zest::level::warn);   // 运行时过滤(按 logger)
 | `%t` `%P` | 线程 id / 进程 id | `%v` | 消息文本 |
 | `%s` | 源码 `file:line` | `%g` `%#` `%!` | 文件 / 行号 / 函数 |
 | `%^` `%$` | 开始 / 结束着色 | `%%` | 字面 `%` |
+
+zest 还支持一套原生的**花括号字段**语法 —— 与 spdlog 的 `%` 标志和 quill 的
+`%(named)` 占位符都不同。两种语法可以在同一 pattern 里混用;`{{`、`}}` 表示字面花括号,
+未识别的 `{字段}` 会原样保留。
+
+| 字段 | 含义 | 字段 | 含义 |
+|---|---|---|---|
+| `{msg}` | 消息文本 | `{level}` / `{level_short}` | 级别全称 / 缩写 |
+| `{logger}` / `{name}` | logger 名 | `{thread}` / `{tid}` | 线程 id |
+| `{pid}` | 进程 id | `{date}` | `YYYY-MM-DD` |
+| `{time}` | `HH:MM:SS.mmm` | `{datetime}` | 日期 + 时间 |
+| `{src}` | 源码 `file:line` | `{path}` `{line}` `{func}` | 路径 / 行号 / 函数 |
+| `{color_start}` `{color_end}` | 着色范围 | | |
+
+```cpp
+logger->set_pattern("{datetime} [{level}] {logger}: {msg}");
+// → 2026-08-18 20:30:01.123 [info] app: started
+```
 
 ### 运行时格式串
 
