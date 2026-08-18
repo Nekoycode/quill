@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - C++20 module interface `src/zest.cppm` (`import zest;`) re-exporting the full
   function/method API. Macros (`ZEST_INFO`, …) cannot be exported by modules and
   remain header-only (`#include <zest/zest.h>`); the exported free functions and
-  member functions cover what the macros expand to.
+  member functions cover what the macros expand to. Built automatically by mcpp,
+  and by CMake via the opt-in `ZEST_BUILD_MODULE` target `zest::module`
+  (CMake >= 3.28, Ninja, gcc >= 16 / clang >= 17 — gcc 15 hits GCC bug 101140).
 - `zest::level::from_string_view` — parse a level name (`"info"`, `"warning"`,
   …) into `zest::level`, for config/CLI-driven level selection.
 - Default-logger convenience free functions

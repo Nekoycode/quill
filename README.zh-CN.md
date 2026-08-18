@@ -209,6 +209,26 @@ ninja/patchelf 引导包,才开始编译,可能要几分钟 —— 进度条停�
 zest 是头文件库,使用时直接 `#include <zest/zest.h>`;`mcpp.toml` 入口只是为了用另一套
 module-first 工具链验证公共头文件能编译通过。
 
+### C++20 模块
+
+zest 还提供模块接口 [`src/zest.cppm`](src/zest.cppm),消费方可以 `import zest;`
+代替 `#include <zest/zest.h>`:
+
+```cpp
+import zest;
+zest::info("hello {}", 42); // 默认 logger 自由函数
+```
+
+C++ 模块无法导出宏,所以 `ZEST_*` 宏仍是头文件专属;模块导出的是等价的函数/方法 API
+(`logger::info`、`zest::info(...)` 自由函数、sink/logger 工厂、registry 等)。
+
+- **mcpp:** `mcpp build` 会自动编译模块(`src/zest.cppm` 是约定的 lib 根)。
+- **CMake:** 用 `-DZEST_BUILD_MODULE=ON` 构建 `zest::module` 目标(见 `module` preset 与
+  `examples/module_import.cpp`)。需要 CMake >= 3.28、Ninja 生成器,以及能把 placement new
+  随模块 BMI 传播的编译器 —— **gcc >= 16 或 clang >= 17**(gcc 15 会踩
+  [GCC bug 101140](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=101140))。示例:
+  `CXX=clang++ cmake --preset module`。
+
 ## 基准测试
 
 自包含的微基准位于 `benchmarks/`:

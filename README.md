@@ -227,6 +227,29 @@ As a header-only library, consumers simply `#include <zest/zest.h>`; the
 `mcpp.toml` entry exists to validate that the public headers compile under a
 second, module-first toolchain.
 
+### C++20 module
+
+zest also ships a module interface, [`src/zest.cppm`](src/zest.cppm), so
+consumers can `import zest;` instead of `#include <zest/zest.h>`:
+
+```cpp
+import zest;
+zest::info("hello {}", 42); // default-logger free function
+```
+
+Since C++ modules cannot export macros, the `ZEST_*` macros stay header-only;
+the module exports the equivalent function/method API (`logger::info`, the
+`zest::info(...)` free functions, the sink/logger factories, the registry…).
+
+- **mcpp:** `mcpp build` compiles the module automatically (`src/zest.cppm` is
+  the conventional lib root).
+- **CMake:** `-DZEST_BUILD_MODULE=ON` builds a `zest::module` target (see the
+  `module` preset and `examples/module_import.cpp`). Requires CMake >= 3.28, a
+  Ninja generator, and a compiler whose module support propagates placement new
+  — **gcc >= 16 or clang >= 17** (gcc 15 hits [GCC bug
+  101140](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=101140)). Example:
+  `CXX=clang++ cmake --preset module`.
+
 ## Benchmarks
 
 Self-contained micro-benchmarks live in `benchmarks/`:
