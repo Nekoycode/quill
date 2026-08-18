@@ -156,12 +156,15 @@ TEST_CASE("trailing lone brace is literal") {
 }
 
 TEST_CASE("composite brace fields date/time/datetime have the expected shape") {
+  // The "!= all-zeros" checks guard has_time_flag_: if it were not set, format()
+  // would use a zero tm_fields and print the same shape ("0000-00-00" etc.).
   {
     zest::pattern_formatter pf("{date}");
     const std::string out = render(pf, make_msg(zest::level::info, ""));
     CHECK(out.size() == 10); // YYYY-MM-DD
     CHECK(out[4] == '-');
     CHECK(out[7] == '-');
+    CHECK(out != "0000-00-00");
   }
   {
     zest::pattern_formatter pf("{time}");
@@ -170,19 +173,24 @@ TEST_CASE("composite brace fields date/time/datetime have the expected shape") {
     CHECK(out[2] == ':');
     CHECK(out[5] == ':');
     CHECK(out[8] == '.');
+    CHECK(out != "00:00:00.000");
   }
   {
     zest::pattern_formatter pf("{datetime}");
     const std::string out = render(pf, make_msg(zest::level::info, ""));
     CHECK(out.size() == 23); // date + ' ' + time
     CHECK(out[10] == ' ');
+    CHECK(out != "0000-00-00 00:00:00.000");
   }
 }
 
-TEST_CASE("brace datetime matches the equivalent percent pattern") {
+TEST_CASE("brace composite fields match the equivalent percent patterns") {
+  const auto msg = make_msg(zest::level::info, "");
+  zest::pattern_formatter brace_dt("{datetime}");
+  zest::pattern_formatter pct_dt("%Y-%m-%d %H:%M:%S.%e");
+  CHECK(render(brace_dt, msg) == render(pct_dt, msg));
   zest::pattern_formatter brace("{date} {time}");
   zest::pattern_formatter pct("%Y-%m-%d %H:%M:%S.%e");
-  const auto msg = make_msg(zest::level::info, "");
   CHECK(render(brace, msg) == render(pct, msg));
 }
 
@@ -202,4 +210,62 @@ TEST_CASE("brace color fields emit ANSI codes when enabled") {
   const std::string out = render(pf, make_msg(zest::level::error, "boom"));
   CHECK(out.find("\033[") != std::string::npos);
   CHECK(out.find("boom") != std::string::npos);
+}
+
+TEST_CASE("brace parser edge cases") {
+  // Verbatim-preservation / escape cases: pattern -> expected output (msg="m").
+  struct Case {
+    std::string pattern;
+    std::string expected;
+  };
+  const Case cases[] = {
+      {"{}", "{}"},        // empty field preserved verbatim
+      {"}", "}"},          // lone close brace
+      {"}}", "}"},         // }} escape
+      {"a}b", "a}b"},      // lone close brace mid-pattern
+      {"%{", "%{"},        // %{ -> unknown %-flag preserved
+      {"x{msg", "x{msg"},  // unterminated field is literal
+      {"{a{b}", "{a{b}"},  // '{' inside a field name -> preserved verbatim
+      {"%% {msg}", "% m"}, // %% escape + a real field
+  };
+  for (const auto& c : cases) {
+    zest::pattern_formatter pf(c.pattern);
+    CHECK(render(pf, make_msg(zest::level::info, "m")) == c.expected);
+  }
+}
+
+TEST_CASE("brace thread/pid/path fields render values") {
+  zest::log_msg m = make_msg(zest::level::info, "x");
+  m.loc = zest::source_loc::current();
+  {
+    zest::pattern_formatter pf("{thread}|{tid}");
+    const std::string out = render(pf, m);
+    CHECK(!out.empty());
+    CHECK(out.find('|') != std::string::npos);
+  }
+  {
+    zest::pattern_formatter pf("{pid}");
+    CHECK(!render(pf, m).empty());
+  }
+  {
+    zest::pattern_formatter pf("{path}");
+    CHECK(render(pf, m).find("test_pattern_formatter.cpp") != std::string::npos);
+  }
+}
+
+TEST_CASE("set_pattern recompiles and re-gates the time computation") {
+  zest::pattern_formatter pf("{time}");
+  const std::string t = render(pf, make_msg(zest::level::info, ""));
+  CHECK(t.size() == 12);
+  CHECK(t != "00:00:00.000");
+
+  // Switch to a time-free pattern; output must not carry stale time.
+  pf.set_pattern("{msg}");
+  CHECK(render(pf, make_msg(zest::level::info, "m")) == "m");
+
+  // Switch back to a time pattern; real time is computed again.
+  pf.set_pattern("{time}");
+  const std::string t2 = render(pf, make_msg(zest::level::info, ""));
+  CHECK(t2.size() == 12);
+  CHECK(t2 != "00:00:00.000");
 }

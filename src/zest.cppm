@@ -1,8 +1,9 @@
 // zest — C++20 module interface for the header-only library.
 //
 // This file is the conventional lib root recognized by the mcpp build tool
-// ([targets.zest] kind = "lib" → src/zest.cppm). CMake does NOT use it: the
-// CMake target `zest` is INTERFACE (header-only) and unaffected.
+// ([targets.zest] kind = "lib" → src/zest.cppm), and is also compiled by CMake
+// into the opt-in `zest::module` target (ZEST_BUILD_MODULE=ON). The default
+// header-only `zest` INTERFACE target does NOT compile it and is unaffected.
 //
 // IMPORTANT — macros are NOT exported:
 // C++ modules cannot export macros (language limitation). The primary
@@ -34,6 +35,7 @@ export namespace zest {
 using zest::version_major;
 using zest::version_minor;
 using zest::version_patch;
+using zest::version_string;
 
 // Levels (level.h).
 using zest::from_string_view;

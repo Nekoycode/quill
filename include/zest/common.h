@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 
 // ---------------------------------------------------------------------------
 // Version
@@ -46,5 +47,8 @@ namespace zest {
 inline constexpr int version_major = ZEST_VERSION_MAJOR;
 inline constexpr int version_minor = ZEST_VERSION_MINOR;
 inline constexpr int version_patch = ZEST_VERSION_PATCH;
+// A string_view constant so the version is reachable from the C++20 module too
+// (the ZEST_VERSION_STRING macro cannot be exported by a module).
+inline constexpr std::string_view version_string = ZEST_VERSION_STRING;
 
 } // namespace zest

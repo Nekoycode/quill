@@ -111,23 +111,34 @@ if(ZEST_BUILD_MODULE)
   if(CMAKE_VERSION VERSION_LESS 3.28)
     message(FATAL_ERROR
       "ZEST_BUILD_MODULE=ON requires CMake >= 3.28 (C++20 module support); "
-      "found ${CMAKE_VERSION}. CMake 3.28/3.29 additionally need the "
-      "experimental module API enabled before project().")
+      "found ${CMAKE_VERSION}. (CMake 3.26/3.27 only had an experimental "
+      "module API, which this project does not support.)")
+  endif()
+  if(NOT CMAKE_GENERATOR MATCHES "Ninja|Visual Studio")
+    message(FATAL_ERROR
+      "ZEST_BUILD_MODULE requires the Ninja (or Visual Studio) generator for "
+      "C++20 module dependency scanning; found '${CMAKE_GENERATOR}'.")
   endif()
   # GCC < 16 cannot make placement new (operator new(size_t, void*)) reachable
   # to module importers (GCC bug 101140), and zest's deferred-formatting SBO
-  # uses placement new in templates that consumers instantiate. Require a
-  # compiler without that limitation.
+  # uses placement new in templates that consumers instantiate. Clang < 17 has
+  # comparably immature module dependency scanning. (MSVC modules are untested.)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 16)
     message(FATAL_ERROR
       "ZEST_BUILD_MODULE with GCC requires GCC >= 16 (found "
       "${CMAKE_CXX_COMPILER_VERSION}): GCC 15 and earlier cannot propagate "
       "placement new through a module BMI (GCC bug 101140). Use GCC >= 16 or "
       "Clang >= 17, e.g.  CXX=clang++ cmake --preset module")
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 17)
+    message(FATAL_ERROR
+      "ZEST_BUILD_MODULE with Clang requires Clang >= 17 (found "
+      "${CMAKE_CXX_COMPILER_VERSION}).")
   endif()
   cmake_policy(SET CMP0155 NEW) # scan C++ sources for module imports
 
-  add_library(zest_module)
+  # Pin STATIC: a module BMI must be rebuilt per consumer anyway, and static is
+  # the verified form (prevents BUILD_SHARED_LIBS flipping this to SHARED).
+  add_library(zest_module STATIC)
   add_library(zest::module ALIAS zest_module)
   target_sources(
     zest_module
