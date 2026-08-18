@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- mcpp build-tool entry (`mcpp.toml`) as an alternative to the CMake flow.
+- C++20 module interface `src/zest.cppm` (`import zest;`) re-exporting the full
+  function/method API. Macros (`ZEST_INFO`, …) cannot be exported by modules and
+  remain header-only (`#include <zest/zest.h>`); the exported free functions and
+  member functions cover what the macros expand to.
+- `zest::level::from_string_view` — parse a level name (`"info"`, `"warning"`,
+  …) into `zest::level`, for config/CLI-driven level selection.
+- Default-logger convenience free functions
+  `zest::trace`/`debug`/`info`/`warn`/`error`/`critical(fmt, args…)` — the
+  function equivalents of the `ZEST_*` macros.
+- README mcpp build documentation, including first-build toolchain download
+  behavior and China-network notes (gitcode CDN vs. GitHub release assets).
+
 ## [0.1.0] - 2026-08-16
 
 ### Added

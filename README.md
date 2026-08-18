@@ -207,11 +207,25 @@ An alternative build entry is provided via [`mcpp.toml`](mcpp.toml) for the
 header-only library as a traditional C++20 `lib` target:
 
 ```bash
-mcpp build
+mcpp build    # produces libzest.a under target/
 ```
 
-(This entry point builds the library for validation; as a header-only library,
-consumers simply `#include <zest/zest.h>`.)
+The **first** `mcpp build` downloads a private gcc toolchain (~170 MB) plus the
+ninja/patchelf bootstrap payloads before it compiles, so it can take several
+minutes — a progress bar lingering on `connecting…` is normal, not a hang.
+
+> **Network note (e.g. behind the GFW):** the gcc toolchain itself comes from a
+> gitcode CDN and usually downloads fine, but the small `ninja`/`patchelf`
+> payloads come from **GitHub release assets**, which may be unreachable. If the
+> `Bootstrap ninja/patchelf` step fails, either run mcpp through your proxy
+> (export `https_proxy`/`http_proxy` in the *same* shell — note that under WSL
+> NAT, `127.0.0.1:port` points at WSL itself, not the Windows host), or switch to
+> a mirror: `mcpp self config --mirror CN`, then `mcpp self init --force` and
+> retry.
+
+As a header-only library, consumers simply `#include <zest/zest.h>`; the
+`mcpp.toml` entry exists to validate that the public headers compile under a
+second, module-first toolchain.
 
 ## Benchmarks
 

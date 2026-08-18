@@ -56,5 +56,7 @@ used; synchronous-only programs stay minimal.
 
 ## 8. Non-goals (for now)
 
-- A `mcpp.toml` dual-build entry (mcpp is module-first and early-stage; deferred).
 - A compiled (non-header-only) library variant.
+
+(The `mcpp.toml` dual-build entry, previously deferred here, now exists — see
+`mcpp.toml` and the C++20 module interface `src/zest.cppm`.)

@@ -186,6 +186,29 @@ target_link_libraries(my_app PRIVATE zest::zest)
 也可通过 FetchContent / `add_subdirectory` —— `zest::zest` 是一个 INTERFACE
 (头文件库)目标。
 
+### mcpp
+
+仓库根目录的 [`mcpp.toml`](mcpp.toml) 为 [mcpp](https://github.com/mcpp-community/mcpp)
+构建工具提供了另一个构建入口,把头文件库编译为传统的 C++20 `lib` 目标:
+
+```bash
+mcpp build    # 产物 libzest.a 在 target/ 下
+```
+
+**首次** `mcpp build` 会先下载一套私有 gcc 工具链(约 170 MB)以及
+ninja/patchelf 引导包,才开始编译,可能要几分钟 —— 进度条停在 `connecting…`
+是正常的,不是卡死。
+
+> **网络提示(如国内 / GFW 环境):** gcc 工具链本体走 gitcode 国内 CDN,通常没问题;
+> 但 `ninja`/`patchelf` 这两个小的引导包来自 **GitHub release 资源**,可能下不下来。
+> 如果 `Bootstrap ninja/patchelf` 这一步失败,要么让 mcpp 走代理(在**同一个** shell 里
+> export `https_proxy`/`http_proxy`;注意 WSL NAT 模式下 `127.0.0.1:端口` 指的是 WSL 自己,
+> 不是 Windows 宿主),要么切镜像:`mcpp self config --mirror CN`,再 `mcpp self init --force`
+> 后重试。
+
+zest 是头文件库,使用时直接 `#include <zest/zest.h>`;`mcpp.toml` 入口只是为了用另一套
+module-first 工具链验证公共头文件能编译通过。
+
 ## 基准测试
 
 自包含的微基准位于 `benchmarks/`:
