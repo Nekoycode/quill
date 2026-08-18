@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (CMake >= 3.28, Ninja, gcc >= 16 / clang >= 17 — gcc 15 hits GCC bug 101140).
 - `zest::level::from_string_view` — parse a level name (`"info"`, `"warning"`,
   …) into `zest::level`, for config/CLI-driven level selection.
+- `zest::version_string` — a `std::string_view` version constant (reachable from
+  the C++20 module, unlike the `ZEST_VERSION_STRING` macro).
 - Default-logger convenience free functions
   `zest::trace`/`debug`/`info`/`warn`/`error`/`critical(fmt, args…)` — the
   function equivalents of the `ZEST_*` macros.

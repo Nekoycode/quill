@@ -265,22 +265,33 @@ zest also ships a module interface, [`src/zest.cppm`](src/zest.cppm), so
 consumers can `import zest;` instead of `#include <zest/zest.h>`:
 
 ```cpp
+#include <cstdio> // keep the std headers you use included, before the import
+
 import zest;
-zest::info("hello {}", 42); // default-logger free function
+
+int main() { zest::info("hello {}", 42); } // default-logger free function
 ```
+
+Because the module keeps the standard library in the global module fragment,
+std declarations are *reachable* but not *visible* to importers — so keep any
+std headers you use (`<cstdio>`, `<string>`, …) included before the `import`.
 
 Since C++ modules cannot export macros, the `ZEST_*` macros stay header-only;
 the module exports the equivalent function/method API (`logger::info`, the
 `zest::info(...)` free functions, the sink/logger factories, the registry…).
+Note the free functions are *not* gated by `ZEST_ACTIVE_LEVEL` (unlike the
+macros) — level filtering still applies at runtime, but there is no
+compile-time elision.
 
 - **mcpp:** `mcpp build` compiles the module automatically (`src/zest.cppm` is
-  the conventional lib root).
+  the conventional lib root). Needs a compiler whose modules propagate
+  placement new — **gcc >= 16 or clang >= 17**.
 - **CMake:** `-DZEST_BUILD_MODULE=ON` builds a `zest::module` target (see the
   `module` preset and `examples/module_import.cpp`). Requires CMake >= 3.28, a
-  Ninja generator, and a compiler whose module support propagates placement new
-  — **gcc >= 16 or clang >= 17** (gcc 15 hits [GCC bug
+  Ninja generator, and **gcc >= 16 or clang >= 17** (gcc 15 hits [GCC bug
   101140](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=101140)). Example:
-  `CXX=clang++ cmake --preset module`.
+  `CXX=clang++ cmake --preset module`. The `zest::module` target is build-tree
+  only for now — it is not installed/exported by `find_package(zest CONFIG)`.
 
 ## Benchmarks
 

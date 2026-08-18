@@ -245,19 +245,28 @@ zest 还提供模块接口 [`src/zest.cppm`](src/zest.cppm),消费方可以 `imp
 代替 `#include <zest/zest.h>`:
 
 ```cpp
+#include <cstdio> // 用到的 std 头要在 import 之前包含
+
 import zest;
-zest::info("hello {}", 42); // 默认 logger 自由函数
+
+int main() { zest::info("hello {}", 42); } // 默认 logger 自由函数
 ```
 
-C++ 模块无法导出宏,所以 `ZEST_*` 宏仍是头文件专属;模块导出的是等价的函数/方法 API
-(`logger::info`、`zest::info(...)` 自由函数、sink/logger 工厂、registry 等)。
+因为模块把标准库放在全局模块片段里,std 声明对导入方是「可达但不可见」的 —— 所以用到的
+std 头(`<cstdio>`、`<string>` 等)要放在 `import` 之前包含。
 
-- **mcpp:** `mcpp build` 会自动编译模块(`src/zest.cppm` 是约定的 lib 根)。
+C++ 模块无法导出宏,所以 `ZEST_*` 宏仍是头文件专属;模块导出的是等价的函数/方法 API
+(`logger::info`、`zest::info(...)` 自由函数、sink/logger 工厂、registry 等)。注意这些自由函数
+**不受** `ZEST_ACTIVE_LEVEL` 编译期门控(与宏不同)—— 级别过滤仍在运行期生效,但没有编译期消除。
+
+- **mcpp:** `mcpp build` 会自动编译模块(`src/zest.cppm` 是约定的 lib 根)。需要模块能传播
+  placement new 的编译器 —— **gcc >= 16 或 clang >= 17**。
 - **CMake:** 用 `-DZEST_BUILD_MODULE=ON` 构建 `zest::module` 目标(见 `module` preset 与
-  `examples/module_import.cpp`)。需要 CMake >= 3.28、Ninja 生成器,以及能把 placement new
-  随模块 BMI 传播的编译器 —— **gcc >= 16 或 clang >= 17**(gcc 15 会踩
+  `examples/module_import.cpp`)。需要 CMake >= 3.28、Ninja 生成器,以及 **gcc >= 16 或
+  clang >= 17**(gcc 15 会踩
   [GCC bug 101140](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=101140))。示例:
-  `CXX=clang++ cmake --preset module`。
+  `CXX=clang++ cmake --preset module`。目前 `zest::module` 仅在构建树内可用,不随
+  `find_package(zest CONFIG)` 安装/导出。
 
 ## 基准测试
 
