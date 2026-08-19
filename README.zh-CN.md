@@ -304,8 +304,8 @@ cmake --build --preset bench
   ctest --preset coverage`,再用 `lcov` 采集。
 - **API 文档** —— `cmake --build . --target docs`(需要 Doxygen)。
 
-`CI` 工作流(手动触发)会运行三平台构建/测试矩阵、sanitizers、fmt 回退,以及
-`check-format`/`clang-tidy`/`coverage` 质量门槛。
+`CI` 工作流(手动触发)会运行三平台构建/测试矩阵、sanitizers、fmt 回退、C++20 模块构建
+(`import zest;`,clang),以及 `check-format`/`clang-tidy`/`coverage` 质量门槛。
 
 ## 项目结构
 

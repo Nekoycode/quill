@@ -330,7 +330,8 @@ Representative numbers (500k iterations, Release, null sink, gcc 15):
 - **API docs** — `cmake --build . --target docs` (requires Doxygen).
 
 The `CI` workflow (manual dispatch) runs the 3-platform build/test matrix,
-sanitizers, fmt fallback, and `check-format`/`clang-tidy`/`coverage` gates.
+sanitizers, fmt fallback, the C++20 module build (`import zest;`, clang), and
+`check-format`/`clang-tidy`/`coverage` gates.
 
 ## Project layout
 

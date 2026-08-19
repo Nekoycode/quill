@@ -154,3 +154,34 @@ jobs:
         with:
           name: coverage
           path: coverage.info
+
+  module:
+    name: module / C++20 import zest (clang)
+    runs-on: ubuntu-latest
+    env:
+      CC: clang
+      CXX: clang++
+    steps:
+      - uses: actions/checkout@v4
+
+      # C++20 modules need CMake >= 3.28 (runner image has it), the Ninja
+      # generator, and a compiler whose modules propagate placement new
+      # (gcc >= 16 / clang >= 17 — see CMakeLists ZEST_BUILD_MODULE). We use
+      # clang because the runner's default gcc is < 16.
+      - name: Install clang
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang
+          clang++ --version
+
+      - name: Configure (module enabled)
+        run: cmake --preset module
+
+      - name: Build
+        run: cmake --build --preset module
+
+      - name: Test
+        run: ctest --preset module
+
+      - name: Run the import zest consumer example
+        run: ./build/module/examples/zest_module_import
