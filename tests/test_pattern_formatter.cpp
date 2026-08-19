@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 
+#include <chrono>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -14,6 +15,13 @@ zest::log_msg make_msg(zest::level lvl, std::string payload) {
   m.lvl = lvl;
   m.logger_name = "test";
   m.payload = std::move(payload);
+  // A fixed, non-epoch timestamp so time-field tests are deterministic and
+  // timezone-independent: an epoch time_point renders as "00:00:00.000" in UTC,
+  // which would be indistinguishable from a broken has_time_flag_ (which also
+  // yields all-zero fields). 05:00:01.234 UTC is non-midnight in every real
+  // timezone (no UTC offset is a fraction of a minute).
+  m.time =
+      std::chrono::system_clock::time_point{} + std::chrono::milliseconds{5 * 3600 * 1000 + 1234};
   return m;
 }
 
