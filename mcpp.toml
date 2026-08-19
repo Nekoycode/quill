@@ -10,6 +10,9 @@ standard    = "c++20"
 # header in its global module fragment and re-exports the public function API.
 # Note: C++ modules cannot export macros — ZEST_INFO etc. remain available only
 # via #include <zest/zest.h>.
+# Compiler floor for the module: gcc >= 16 or clang >= 17 (gcc 15 and earlier
+# cannot propagate placement new through a module BMI — GCC bug 101140 — which
+# the deferred-formatting SBO relies on). mcpp's bundled toolchain is gcc 16.
 [targets.zest]
 kind = "lib"
 

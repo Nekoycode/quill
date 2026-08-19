@@ -54,7 +54,21 @@ per-record copy. `async_msg` is 176 bytes, so a default 4096-entry queue is
 ~0.7 MB. The heavy async machinery is only instantiated when `async_logger` is
 used; synchronous-only programs stay minimal.
 
-## 8. Non-goals (for now)
+## 8. A distinct `{field}` pattern syntax, and a conservative overflow default
+
+Two choices deliberately put distance between zest and spdlog/quill without
+changing the familiar shape:
+
+- The pattern formatter accepts a `{field}` brace syntax (`{datetime} [{level}]
+  {logger}: {msg}`) alongside the spdlog-compatible `%`-flags. The brace form is
+  zest's native syntax — distinct from both spdlog's `%` and quill's
+  `%(named)` — and both may be mixed in one pattern; the `%`-flags stay for
+  familiarity/compatibility.
+- The async queue's default overflow policy is `block` (never silently lose a
+  record). `drop_oldest`/`drop_newest` are opt-in for latency-sensitive paths,
+  where dropping is preferable to stalling the caller.
+
+## 9. Non-goals (for now)
 
 - A compiled (non-header-only) library variant.
 

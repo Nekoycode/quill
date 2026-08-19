@@ -42,9 +42,12 @@ shared by many threads and many loggers.
 
 ### 3. `pattern_formatter`
 
-Compiles a spdlog-style pattern string (`%Y %m %d %H %M %S %e %l %L %n %t %P
-%s %g %# %! %v %^ %$ %%`) once into a list of items, then renders each record
-into a line. Unknown flags are preserved literally.
+Compiles a pattern string once into a list of items, then renders each record
+into a line. Two interchangeable, freely-mixable syntaxes are supported: the
+spdlog-compatible `%`-flags (`%Y %m %d %H %M %S %e %l %L %n %t %P %s %g %# %! %v
+%^ %$ %%`) and zest's native brace fields (`{datetime} [{level}] {logger}
+{msg}`, …), which are distinct from both spdlog's `%` and quill's `%(named)`.
+Unknown flags/fields are preserved literally; `%%` and `{{`/`}}` escape.
 
 ### 4. `level` + compile-time gating
 
@@ -56,6 +59,9 @@ entirely (no formatting, no argument evaluation).
 
 A thread-safe, lazily-initialized (Meyers singleton) map of named loggers,
 providing `get`/`create`/`drop`, a default logger, and `flush_all`/`shutdown`.
+`flush_every(interval)` additionally runs a background `std::jthread` that
+flushes all loggers on a stop-token-aware schedule; it stops cleanly on a
+non-positive interval, on `shutdown()`, and at registry destruction.
 
 ### 6. Async engine
 
@@ -70,6 +76,25 @@ counter lets `flush()` wait until every enqueued record is written before
 flushing the sinks, which stays correct across multiple backends. Destruction
 requests a stop and drains all pending records, so no in-flight message is
 lost.
+
+When the bounded queue is full, the `overflow_policy` controls producer
+behavior: `block` (default) waits for space so nothing is lost; `drop_oldest`
+evicts the oldest pending record; `drop_newest` discards the incoming record.
+The pending counter is kept exact under every policy (count-before-enqueue,
+subtract evictions), so `flush()` and destruction drain correctly regardless of
+drops.
+
+### 7. C++20 module interface
+
+`src/zest.cppm` provides `import zest;`. It includes all public headers in the
+global module fragment (so declarations stay attached to the global module —
+no ODR/ABI drift vs. the header-only build), then re-exports the public API
+with `using`-declarations. Macros cannot be exported by a module, so the
+`ZEST_*` macros stay header-only and the module exposes the equivalent
+function/method API (the `logger::info(...)` members and the `zest::info(...)`
+default-logger free functions). The module is built by mcpp (conventional
+`src/zest.cppm` lib root) and by CMake via the opt-in `ZEST_BUILD_MODULE`
+target `zest::module`.
 
 ## Threading model
 
