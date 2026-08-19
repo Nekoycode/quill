@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   {msg}`, …) alongside the spdlog-compatible `%`-flags — distinct from both
   spdlog's `%` and quill's `%(named)`; `{{`/`}}` escape literal braces and the
   two syntaxes mix freely in one pattern.
+- Async **overflow policy** (`zest::overflow_policy::block` / `drop_oldest` /
+  `drop_newest`) for the bounded queue — what to do when the queue is full
+  instead of always blocking the producer.
+- `zest::flush_every(interval)` — flush all loggers periodically on a background
+  thread (stops on a non-positive interval, `shutdown()`, or program exit), so a
+  crash loses at most one interval of buffered output.
 - README mcpp build documentation, including first-build toolchain download
   behavior and China-network notes (gitcode CDN vs. GitHub release assets).
 

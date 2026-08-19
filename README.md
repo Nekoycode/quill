@@ -194,6 +194,27 @@ common case); backend threads format and write. With more than one backend
 thread, records are not strictly FIFO ordered. Shutdown drains all pending
 records.
 
+**Overflow policy.** When the bounded queue is full, the default is to block the
+producer. You can instead drop records (for latency-sensitive paths):
+
+```cpp
+using zest::overflow_policy;
+auto lg = std::make_shared<zest::async_logger>(
+    "fast", std::vector<std::shared_ptr<zest::sinks::sink>>{zest::basic_file_sink("app.log")},
+    /*queue_size=*/4096, /*backend_threads=*/1, overflow_policy::drop_oldest);
+// block       — wait for space (never drops; default)
+// drop_oldest — evict the oldest pending record to make room
+// drop_newest — discard the incoming record
+```
+
+**Periodic flush.** `zest::flush_every(interval)` flushes all loggers on a
+background thread, so a crash loses at most one interval of buffered output:
+
+```cpp
+zest::flush_every(std::chrono::seconds{2}); // flush_all() every 2s
+zest::flush_every(std::chrono::seconds{0}); // stop
+```
+
 ## Backtrace
 
 ```cpp

@@ -178,6 +178,26 @@ logger->flush();
 前端只捕获参数、不格式化(常见情况零分配);后端线程负责格式化与写入。后端线程数
 大于 1 时,记录不再严格 FIFO 有序。关闭时会排空所有在途记录。
 
+**溢出策略。** 有界队列满时,默认阻塞生产者。对延迟敏感的路径可以改为丢弃记录:
+
+```cpp
+using zest::overflow_policy;
+auto lg = std::make_shared<zest::async_logger>(
+    "fast", std::vector<std::shared_ptr<zest::sinks::sink>>{zest::basic_file_sink("app.log")},
+    /*queue_size=*/4096, /*backend_threads=*/1, overflow_policy::drop_oldest);
+// block       —— 等待空间(不丢弃;默认)
+// drop_oldest —— 逐出最旧的在途记录,为新记录腾位置
+// drop_newest —— 丢弃新进来的这条记录
+```
+
+**定期落盘。** `zest::flush_every(间隔)` 会在后台线程上周期性地 flush 所有 logger,这样
+进程崩溃时最多只丢一个间隔内的缓冲输出:
+
+```cpp
+zest::flush_every(std::chrono::seconds{2}); // 每 2 秒 flush_all()
+zest::flush_every(std::chrono::seconds{0}); // 停止
+```
+
 ## 回溯(Backtrace)
 
 ```cpp
