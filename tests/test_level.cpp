@@ -60,8 +60,11 @@ TEST_CASE("from_string_view is the inverse of to_string_view") {
   for (zest::level lvl :
        {zest::level::trace, zest::level::debug, zest::level::info, zest::level::warn,
         zest::level::error, zest::level::critical, zest::level::off}) {
-    auto parsed = zest::from_string_view(zest::to_string_view(lvl));
-    REQUIRE(parsed.has_value());
-    CHECK(static_cast<int>(*parsed) == static_cast<int>(lvl));
+    // value_or avoids an unchecked optional access (clang-tidy
+    // bugprone-unchecked-optional-access); a parse failure yields n_levels,
+    // which never equals lvl, so the CHECK still catches a broken parse.
+    CHECK(static_cast<int>(
+              zest::from_string_view(zest::to_string_view(lvl)).value_or(zest::level::n_levels)) ==
+          static_cast<int>(lvl));
   }
 }
