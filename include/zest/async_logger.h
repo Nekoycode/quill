@@ -22,6 +22,13 @@ struct async_msg {
   detail::deferred_message deferred; // set when formatting is deferred
 };
 
+// What the async frontend does when the bounded queue is full.
+enum class overflow_policy {
+  block,       // producer waits for space (never drops records) — default
+  drop_oldest, // evict the oldest pending record to make room for the new one
+  drop_newest, // discard the incoming record
+};
+
 // A logger whose sink writes are performed on a pool of background threads.
 // The frontend only captures the message (metadata + arguments, allocation-free
 // for the common case); the backend threads format the `%v` text and apply each
@@ -33,8 +40,10 @@ struct async_msg {
 class async_logger final : public logger {
 public:
   explicit async_logger(std::string name, std::vector<std::shared_ptr<sinks::sink>> sinks,
-                        std::size_t queue_size = 4096, std::size_t backend_threads = 1)
-      : logger(std::move(name), std::move(sinks), /*defers_formatting=*/true), queue_(queue_size) {
+                        std::size_t queue_size = 4096, std::size_t backend_threads = 1,
+                        overflow_policy policy = overflow_policy::block)
+      : logger(std::move(name), std::move(sinks), /*defers_formatting=*/true), queue_(queue_size),
+        policy_(policy) {
     backend_threads_.reserve(backend_threads);
     for (std::size_t i = 0; i < backend_threads; ++i) {
       backend_threads_.emplace_back([this](std::stop_token st) { backend_loop(st); });
@@ -66,8 +75,33 @@ public:
 
 protected:
   void log_meta(log_msg&& meta, detail::deferred_message&& deferred) override {
-    pending_.fetch_add(1, std::memory_order_relaxed);
-    queue_.enqueue(async_msg{std::move(meta), std::move(deferred)});
+    async_msg m{std::move(meta), std::move(deferred)};
+    switch (policy_) {
+    case overflow_policy::block:
+      // Count before enqueue so flush() never returns while a record is in flight.
+      pending_.fetch_add(1, std::memory_order_relaxed);
+      queue_.enqueue(std::move(m));
+      break;
+    case overflow_policy::drop_newest:
+      // Optimistically count, then undo if the record was dropped — counting
+      // first keeps flush() on the safe (wait-longer) side and avoids a
+      // transient negative count if a backend drains it concurrently.
+      pending_.fetch_add(1, std::memory_order_relaxed);
+      if (!queue_.try_enqueue_drop_newest(std::move(m))) {
+        pending_.fetch_sub(1, std::memory_order_relaxed); // dropped: never pending
+      }
+      break;
+    case overflow_policy::drop_oldest: {
+      pending_.fetch_add(1, std::memory_order_relaxed);
+      const std::size_t evicted = queue_.enqueue_drop_oldest(std::move(m));
+      if (evicted != 0) {
+        // Evicted records were counted when enqueued but will never be
+        // processed, so the backend's decrement in process() never comes.
+        pending_.fetch_sub(evicted, std::memory_order_relaxed);
+      }
+      break;
+    }
+    }
   }
 
 private:
@@ -104,6 +138,7 @@ private:
   // `queue_` are still alive for the backend threads to use during the drain.
   std::atomic<std::size_t> pending_{0};
   detail::blocking_queue<async_msg> queue_;
+  overflow_policy policy_;
   std::vector<std::jthread> backend_threads_;
 };
 

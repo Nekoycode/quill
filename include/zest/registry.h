@@ -1,8 +1,12 @@
 #pragma once
 
+#include <chrono>
+#include <condition_variable>
 #include <memory>
 #include <mutex>
+#include <stop_token>
 #include <string>
+#include <thread>
 #include <unordered_map>
 
 #include <zest/common.h>
@@ -78,7 +82,32 @@ public:
     }
   }
 
+  // Start (or restart) a background thread that flushes every registered logger
+  // every `interval`. A non-positive interval stops the periodic flusher. The
+  // flusher also stops on shutdown() and when the registry is destroyed.
+  void flush_every(std::chrono::milliseconds interval) {
+    std::lock_guard<std::mutex> lock(flush_mutex_);
+    stop_periodic_flush_locked();
+    if (interval.count() <= 0) {
+      return;
+    }
+    periodic_flusher_ = std::jthread([this, interval](std::stop_token st) {
+      while (true) {
+        {
+          std::unique_lock<std::mutex> lk(flush_sleep_mutex_);
+          // wait_for with a stop_token wakes on stop OR on timeout; it returns
+          // the predicate's value, so `true` means stop was requested.
+          if (flush_cv_.wait_for(lk, st, interval, [&] { return st.stop_requested(); })) {
+            break;
+          }
+        }
+        flush_all();
+      }
+    });
+  }
+
   void shutdown() {
+    stop_periodic_flush(); // stop the flusher before draining
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto& [name, l] : loggers_) {
       (void)name;
@@ -91,9 +120,32 @@ public:
 private:
   registry() = default;
 
+  ~registry() { stop_periodic_flush(); } // join the flusher before members die
+
+  void stop_periodic_flush() {
+    std::lock_guard<std::mutex> lock(flush_mutex_);
+    stop_periodic_flush_locked();
+  }
+
+  void stop_periodic_flush_locked() {
+    if (periodic_flusher_.joinable()) {
+      periodic_flusher_.request_stop();
+      flush_cv_.notify_all();
+      periodic_flusher_.join();
+    }
+  }
+
   std::mutex mutex_;
   std::unordered_map<std::string, std::shared_ptr<logger>> loggers_;
   std::shared_ptr<logger> default_logger_;
+
+  // Periodic-flush state. `periodic_flusher_` is declared LAST so that on
+  // destruction it is joined FIRST (reverse order), while the mutexes and the
+  // condition variable it uses are still alive.
+  std::mutex flush_mutex_;
+  std::mutex flush_sleep_mutex_;
+  std::condition_variable_any flush_cv_;
+  std::jthread periodic_flusher_;
 };
 
 // -- Free functions ---------------------------------------------------------
@@ -124,6 +176,13 @@ ZEST_INLINE void flush_all() {
 
 ZEST_INLINE void shutdown() {
   registry::instance().shutdown();
+}
+
+// Flush all registered loggers every `interval` on a background thread.
+// Pass a non-positive interval (or call shutdown()) to stop the flusher.
+template <typename Rep, typename Period>
+ZEST_INLINE void flush_every(std::chrono::duration<Rep, Period> interval) {
+  registry::instance().flush_every(std::chrono::duration_cast<std::chrono::milliseconds>(interval));
 }
 
 } // namespace zest

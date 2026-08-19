@@ -127,6 +127,44 @@ public:
     }
   }
 
+  // Overflow policy: drop-newest. If the queue is full the incoming item is
+  // discarded instead of blocking the producer. Returns true if enqueued.
+  bool try_enqueue_drop_newest(T&& item) {
+    if (!queue_.try_enqueue(std::move(item))) {
+      return false; // full: drop the incoming message
+    }
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      not_empty_.notify_one();
+    }
+    return true;
+  }
+
+  // Overflow policy: drop-oldest. If the queue is full, evict the oldest
+  // pending item to make room for the incoming one (never blocks). Returns the
+  // number of items evicted — the caller must account for them (they were
+  // counted as pending when first enqueued but will never be processed).
+  //
+  // Under contention the eviction loop may evict more than one item (another
+  // producer may grab a freed slot before our retry); the returned count is the
+  // exact number evicted. `T` must be default-constructible.
+  std::size_t enqueue_drop_oldest(T&& item) {
+    std::size_t evicted = 0;
+    while (!queue_.try_enqueue(std::move(item))) {
+      // Full: evict the oldest pending item. If a consumer drained the queue in
+      // the meantime (try_dequeue fails), just retry the enqueue.
+      T evicted_item;
+      if (queue_.try_dequeue(evicted_item)) {
+        ++evicted;
+      }
+    }
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      not_empty_.notify_one();
+    }
+    return evicted;
+  }
+
   // Returns false when stop was requested and the queue is empty.
   bool dequeue(T& out, const std::stop_token& st) {
     for (;;) {

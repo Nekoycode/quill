@@ -55,12 +55,14 @@ using zest::source_loc;
 using zest::async_logger;
 using zest::async_msg;
 using zest::logger;
+using zest::overflow_policy;
 
 // Registry and its free functions (registry.h).
 using zest::default_logger;
 using zest::drop_all;
 using zest::drop_logger;
 using zest::flush_all;
+using zest::flush_every;
 using zest::get_logger;
 using zest::registry;
 using zest::set_default_logger;
