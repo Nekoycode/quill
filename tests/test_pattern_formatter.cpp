@@ -20,8 +20,8 @@ zest::log_msg make_msg(zest::level lvl, std::string payload) {
   // which would be indistinguishable from a broken has_time_flag_ (which also
   // yields all-zero fields). 05:00:01.234 UTC is non-midnight in every real
   // timezone (no UTC offset is a fraction of a minute).
-  m.time =
-      std::chrono::system_clock::time_point{} + std::chrono::milliseconds{5 * 3600 * 1000 + 1234};
+  m.time = std::chrono::system_clock::time_point{} + std::chrono::hours{5} +
+           std::chrono::milliseconds{1234};
   return m;
 }
 
@@ -221,25 +221,20 @@ TEST_CASE("brace color fields emit ANSI codes when enabled") {
 }
 
 TEST_CASE("brace parser edge cases") {
-  // Verbatim-preservation / escape cases: pattern -> expected output (msg="m").
-  struct Case {
-    std::string pattern;
-    std::string expected;
+  // (pattern, expected output) with msg = "m"; a lambda keeps this
+  // struct-free (clang-tidy modernize-use-designated-initializers).
+  auto check = [](const char* pattern, const char* expected) {
+    zest::pattern_formatter pf(pattern);
+    return render(pf, make_msg(zest::level::info, "m")) == expected;
   };
-  const Case cases[] = {
-      {"{}", "{}"},        // empty field preserved verbatim
-      {"}", "}"},          // lone close brace
-      {"}}", "}"},         // }} escape
-      {"a}b", "a}b"},      // lone close brace mid-pattern
-      {"%{", "%{"},        // %{ -> unknown %-flag preserved
-      {"x{msg", "x{msg"},  // unterminated field is literal
-      {"{a{b}", "{a{b}"},  // '{' inside a field name -> preserved verbatim
-      {"%% {msg}", "% m"}, // %% escape + a real field
-  };
-  for (const auto& c : cases) {
-    zest::pattern_formatter pf(c.pattern);
-    CHECK(render(pf, make_msg(zest::level::info, "m")) == c.expected);
-  }
+  CHECK(check("{}", "{}"));        // empty field preserved verbatim
+  CHECK(check("}", "}"));          // lone close brace
+  CHECK(check("}}", "}"));         // }} escape
+  CHECK(check("a}b", "a}b"));      // lone close brace mid-pattern
+  CHECK(check("%{", "%{"));        // %{ -> unknown %-flag preserved
+  CHECK(check("x{msg", "x{msg"));  // unterminated field is literal
+  CHECK(check("{a{b}", "{a{b}"));  // '{' inside a field name -> preserved verbatim
+  CHECK(check("%% {msg}", "% m")); // %% escape + a real field
 }
 
 TEST_CASE("brace thread/pid/path fields render values") {

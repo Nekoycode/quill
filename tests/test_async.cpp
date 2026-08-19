@@ -11,47 +11,6 @@
 #include "capture_sink.h"
 #include "test_config.h"
 
-namespace {
-
-// A sink that records lines but sleeps in write_output to simulate slow I/O, so
-// a fast producer can overflow the bounded async queue. write_output is called
-// without the sink's formatter mutex held, so sleeping here is safe.
-class slow_sink final : public zest::sinks::sink {
-public:
-  explicit slow_sink(std::chrono::milliseconds delay) : delay_(delay) {}
-
-  void flush() override {}
-
-  std::size_t count() const {
-    std::lock_guard<std::mutex> lock(lines_mutex_);
-    return lines_.size();
-  }
-
-  bool contains(const std::string& needle) const {
-    std::lock_guard<std::mutex> lock(lines_mutex_);
-    for (const auto& l : lines_) {
-      if (l.find(needle) != std::string::npos) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-protected:
-  void write_output(std::string_view line) override {
-    std::this_thread::sleep_for(delay_);
-    std::lock_guard<std::mutex> lock(lines_mutex_);
-    lines_.push_back(std::string(line));
-  }
-
-private:
-  std::chrono::milliseconds delay_;
-  mutable std::mutex lines_mutex_;
-  std::vector<std::string> lines_;
-};
-
-} // namespace
-
 TEST_CASE("async logger delivers all messages from multiple threads") {
   auto cs = std::make_shared<zest::test::capture_sink>();
   std::vector<std::shared_ptr<zest::sinks::sink>> sinks{cs};
@@ -135,7 +94,7 @@ TEST_CASE("async overflow policy block delivers every record even with a tiny qu
 }
 
 TEST_CASE("async overflow policy drop_newest discards when the queue is full") {
-  auto cs = std::make_shared<slow_sink>(std::chrono::milliseconds(2));
+  auto cs = std::make_shared<zest::test::slow_sink>(std::chrono::milliseconds(2));
   std::vector<std::shared_ptr<zest::sinks::sink>> sinks{cs};
   auto lg = std::make_shared<zest::async_logger>("ovf-newest", std::move(sinks),
                                                  /*queue_size=*/8, /*backend_threads=*/1,
@@ -153,7 +112,7 @@ TEST_CASE("async overflow policy drop_newest discards when the queue is full") {
 }
 
 TEST_CASE("async overflow policy drop_oldest keeps the newest records") {
-  auto cs = std::make_shared<slow_sink>(std::chrono::milliseconds(2));
+  auto cs = std::make_shared<zest::test::slow_sink>(std::chrono::milliseconds(2));
   std::vector<std::shared_ptr<zest::sinks::sink>> sinks{cs};
   auto lg = std::make_shared<zest::async_logger>("ovf-oldest", std::move(sinks),
                                                  /*queue_size=*/8, /*backend_threads=*/1,
@@ -173,7 +132,7 @@ TEST_CASE("async overflow policy drop_oldest keeps the newest records") {
 }
 
 TEST_CASE("async overflow drop_oldest under concurrent producers completes flush") {
-  auto cs = std::make_shared<slow_sink>(std::chrono::milliseconds(1));
+  auto cs = std::make_shared<zest::test::slow_sink>(std::chrono::milliseconds(1));
   std::vector<std::shared_ptr<zest::sinks::sink>> sinks{cs};
   auto lg = std::make_shared<zest::async_logger>("ovf-conc", std::move(sinks),
                                                  /*queue_size=*/16, /*backend_threads=*/2,
