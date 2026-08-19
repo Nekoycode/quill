@@ -181,11 +181,11 @@ TEST_CASE("async overflow drop_oldest under concurrent producers completes flush
   lg->set_pattern("%v");
 
   constexpr int n_threads = 4;
-  const int n_msgs = ZEST_TEST_ITERS(300);
+  constexpr int n_msgs = ZEST_TEST_ITERS(300);
   std::vector<std::thread> ts;
   ts.reserve(n_threads);
   for (int t = 0; t < n_threads; ++t) {
-    ts.emplace_back([lg, t, n_msgs] {
+    ts.emplace_back([lg, t] {
       for (int i = 0; i < n_msgs; ++i) {
         lg->info("t{} m{}", t, i);
       }

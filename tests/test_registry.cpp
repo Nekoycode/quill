@@ -16,7 +16,7 @@ public:
   int flushes() const { return flushes_.load(std::memory_order_relaxed); }
 
 protected:
-  void write_output(std::string_view) override {}
+  void write_output([[maybe_unused]] std::string_view line) override {}
 
 private:
   std::atomic<int> flushes_{0};
