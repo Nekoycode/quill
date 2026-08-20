@@ -161,6 +161,12 @@ public:
     {
       std::lock_guard<std::mutex> lock(mutex_);
       not_empty_.notify_one();
+      // Evictions freed slots; wake any producer blocked on a full queue. (Only
+      // relevant if blocking_queue is ever shared by mixed-policy producers;
+      // async_logger pins one overflow_policy per logger.)
+      if (evicted != 0) {
+        not_full_.notify_one();
+      }
     }
     return evicted;
   }
