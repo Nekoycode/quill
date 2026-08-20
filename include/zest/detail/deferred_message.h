@@ -65,8 +65,13 @@ public:
     using holder = holder_t<std::decay_t<Args>...>;
     deferred_message m;
 
+    // The deferred_message move operations are noexcept; the inline path moves
+    // the holder in place (move_inline), so a holder whose move constructor can
+    // throw would terminate inside a noexcept move. Force such holders onto the
+    // heap path, where a move only relocates the pointer.
     if constexpr (sizeof(holder) <= inline_capacity &&
-                  alignof(holder) <= alignof(std::max_align_t)) {
+                  alignof(holder) <= alignof(std::max_align_t) &&
+                  std::is_nothrow_move_constructible_v<holder>) {
       new (m.storage_) holder(fmt, std::forward<Args>(args)...);
       m.fmt_ = &format_inline<holder>;
       m.move_ = &move_inline<holder>;
@@ -104,16 +109,18 @@ private:
   using destroy_fn = void (*)(std::byte*);
 
   template <typename H> static void format_inline(const std::byte* s, std::string& out) {
-    reinterpret_cast<const H*>(s)->format(out);
+    std::launder(reinterpret_cast<const H*>(s))->format(out);
   }
 
   template <typename H> static void move_inline(std::byte* dst, std::byte* src) {
-    H* s = reinterpret_cast<H*>(src);
+    H* s = std::launder(reinterpret_cast<H*>(src));
     new (dst) H(std::move(*s));
     s->~H();
   }
 
-  template <typename H> static void destroy_inline(std::byte* s) { reinterpret_cast<H*>(s)->~H(); }
+  template <typename H> static void destroy_inline(std::byte* s) {
+    std::launder(reinterpret_cast<H*>(s))->~H();
+  }
 
   template <typename H> static void format_heap(const std::byte* s, std::string& out) {
     H* h;

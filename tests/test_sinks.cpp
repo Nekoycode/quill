@@ -80,6 +80,26 @@ TEST_CASE("rolling_file_sink rotates by size and keeps max_files") {
   CHECK_FALSE(fs::exists(path + ".3")); // max_files=2, so nothing beyond .2
 }
 
+TEST_CASE("rolling_file_sink does not rotate an empty file for an oversized record") {
+  zest::test::temp_dir td;
+  const std::string path = td.file("roll_oversize.log");
+
+  {
+    auto sink = zest::rolling_file_sink(path, /*max_size=*/10, /*max_files=*/2);
+    auto lg = zest::create_logger("roll_oversize", sink);
+    lg->set_pattern("%v");
+    // One record far larger than max_size on a fresh (empty) file.
+    lg->info("this single record is way larger than the 10-byte cap");
+    lg->flush();
+  }
+
+  // The oversized record is written to the base file; rotating an empty file
+  // would just evict backups for nothing, so no backups must be created.
+  CHECK(fs::exists(path));
+  CHECK_FALSE(fs::exists(path + ".1"));
+  CHECK_FALSE(fs::exists(path + ".2"));
+}
+
 TEST_CASE("daily_file_sink writes to a dated file") {
   zest::test::temp_dir td;
   const std::string base = td.file("daily");
