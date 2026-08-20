@@ -60,3 +60,17 @@ TEST_CASE("flush_every stops firing after a non-positive interval") {
   std::this_thread::sleep_for(std::chrono::milliseconds{60});
   CHECK(sink->flushes() == after_stop); // no further flushes once stopped
 }
+
+TEST_CASE("flush_every stops on shutdown") {
+  zest::drop_all();
+  auto sink = std::make_shared<zest::test::flush_counting_sink>();
+  zest::create_logger("periodic-shutdown", sink);
+
+  zest::flush_every(std::chrono::milliseconds{15});
+  std::this_thread::sleep_for(std::chrono::milliseconds{60});
+  zest::shutdown(); // shutdown must stop the periodic flusher
+
+  const int after_shutdown = sink->flushes();
+  std::this_thread::sleep_for(std::chrono::milliseconds{60});
+  CHECK(sink->flushes() == after_shutdown); // no further flushes after shutdown
+}

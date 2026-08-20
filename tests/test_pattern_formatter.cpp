@@ -148,6 +148,13 @@ TEST_CASE("brace and percent syntaxes can be mixed") {
   CHECK(render(pf, make_msg(zest::level::warn, "hi")) == "[W] test: hi");
 }
 
+TEST_CASE("message payload containing braces is not misparsed") {
+  // Only the PATTERN's {fields} are substituted; braces inside the message
+  // payload are literal content.
+  zest::pattern_formatter pf("{level}:{msg}");
+  CHECK(render(pf, make_msg(zest::level::info, "a{b}c{d}")) == "info:a{b}c{d}");
+}
+
 TEST_CASE("brace escapes produce literal braces") {
   zest::pattern_formatter pf("{{msg}} {msg}");
   CHECK(render(pf, make_msg(zest::level::info, "hi")) == "{msg} hi");
