@@ -40,9 +40,11 @@ inline tm_fields to_local_time(std::chrono::system_clock::time_point tp) {
 #else
   localtime_r(&tt, &t);
 #endif
-  const auto micros =
-      std::chrono::duration_cast<std::chrono::microseconds>(tp.time_since_epoch()).count() %
-      1000000;
+  const auto total_micros =
+      std::chrono::duration_cast<std::chrono::microseconds>(tp.time_since_epoch()).count();
+  // Normalize into [0, 1000000): C++ `%` truncates toward zero, so a pre-epoch
+  // (negative) timestamp would otherwise yield a negative sub-second field.
+  const auto micros = ((total_micros % 1000000) + 1000000) % 1000000;
   return tm_fields{
       t.tm_year + 1900,
       t.tm_mon + 1,
