@@ -5,14 +5,15 @@
 #include <string>
 #include <vector>
 
-#include <zest/detail/circular_buffer.h>
-
 namespace zest::detail {
 
 // Fixed-capacity ring buffer that overwrites the oldest entry when full.
+// `capacity` must be > 0 (the modulo indexing divides by it); a 0 is clamped
+// to 1. Callers (logger backtrace) already reject a 0 capacity.
 template <typename T> class circular_buffer {
 public:
-  explicit circular_buffer(std::size_t capacity) : buf_(capacity), capacity_(capacity) {}
+  explicit circular_buffer(std::size_t capacity)
+      : buf_(capacity == 0 ? 1 : capacity), capacity_(capacity == 0 ? 1 : capacity) {}
 
   void push(const T& value) {
     buf_[(head_ + size_) % capacity_] = value;
