@@ -188,3 +188,9 @@ TEST_CASE("daily_file_sink validates the rollover time") {
   CHECK_THROWS_AS(zest::daily_file_sink(td.file("daily"), 0, /*rotation_minute=*/60),
                   std::invalid_argument);
 }
+
+TEST_CASE("rolling_file_sink rejects a zero max_size") {
+  zest::test::temp_dir td;
+  CHECK_THROWS_AS(zest::rolling_file_sink(td.file("roll"), /*max_size=*/0, /*max_files=*/3),
+                  std::invalid_argument);
+}

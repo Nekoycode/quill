@@ -17,6 +17,9 @@ class rolling_file_sink final : public sink {
 public:
   rolling_file_sink(std::string base_filename, std::size_t max_size, std::size_t max_files)
       : base_filename_(std::move(base_filename)), max_size_(max_size), max_files_(max_files) {
+    if (max_size_ == 0) {
+      throw std::invalid_argument("zest: rolling_file_sink max_size must be > 0");
+    }
     // Opens for append and accounts for any pre-existing content so the first
     // rotation is accurate.
     if (!try_reopen()) {
@@ -65,6 +68,9 @@ private:
     if (file_ == nullptr) {
       return false;
     }
+    // Reset before re-stat so a failed fseek can't leave current_size_ stale.
+    // (fseek/ftell essentially never fail on a regular file opened with fopen.)
+    current_size_ = 0;
     if (std::fseek(file_, 0, SEEK_END) == 0) {
       const long pos = std::ftell(file_);
       current_size_ = (pos >= 0) ? static_cast<std::size_t>(pos) : 0;
