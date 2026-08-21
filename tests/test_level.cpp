@@ -54,6 +54,9 @@ TEST_CASE("from_string_view rejects unknown input") {
   CHECK(!zest::from_string_view("verbose").has_value());
   CHECK(!zest::from_string_view("INFO").has_value()); // exact lowercase match by design
   CHECK(!zest::from_string_view("n_levels").has_value());
+  CHECK(!zest::from_string_view("info ").has_value()); // trailing space
+  CHECK(!zest::from_string_view(" info").has_value()); // leading space
+  CHECK(!zest::from_string_view(" warn").has_value()); // leading space before alias
 }
 
 TEST_CASE("from_string_view is the inverse of to_string_view") {

@@ -74,3 +74,39 @@ TEST_CASE("flush_every stops on shutdown") {
   std::this_thread::sleep_for(std::chrono::milliseconds{60});
   CHECK(sink->flushes() == after_shutdown); // no further flushes after shutdown
 }
+
+TEST_CASE("re-registering the same name replaces the entry") {
+  zest::drop_all();
+  auto a = zest::create_logger("dup", zest::null_sink());
+  auto b = zest::create_logger("dup", zest::null_sink());
+  CHECK(zest::get_logger("dup") == b); // the later registration wins
+  CHECK(zest::get_logger("dup") != a);
+  zest::drop_all();
+}
+
+TEST_CASE("dropping the default logger resets it for lazy recreation") {
+  zest::drop_all();
+  auto first = zest::default_logger(); // lazily created "default"
+  REQUIRE(first != nullptr);
+  REQUIRE(first->name() == "default");
+
+  zest::drop_logger("default");
+  CHECK(zest::get_logger("default") == nullptr);
+
+  auto second = zest::default_logger(); // recreated fresh on demand
+  CHECK(second->name() == "default");
+  CHECK(second != first);
+  zest::drop_all();
+}
+
+TEST_CASE("shutdown clears every registered logger and the default") {
+  zest::drop_all();
+  zest::create_logger("s1", zest::null_sink());
+  zest::create_logger("s2", zest::null_sink());
+  REQUIRE(zest::get_logger("s1") != nullptr);
+  REQUIRE(zest::get_logger("s2") != nullptr);
+
+  zest::shutdown();
+  CHECK(zest::get_logger("s1") == nullptr);
+  CHECK(zest::get_logger("s2") == nullptr);
+}

@@ -139,3 +139,36 @@ TEST_CASE("default-logger free functions forward to the default logger") {
 
   zest::drop_all(); // reset so later tests get a fresh lazy default logger
 }
+
+TEST_CASE("log_raw writes the message verbatim without format interpretation") {
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  zest::logger lg("raw", cs);
+  lg.set_pattern("%v");
+
+  // Braces in a raw message are NOT treated as format placeholders.
+  lg.log_raw(zest::level::info, "not {} a {} format string");
+  lg.flush();
+
+  const auto lines2 = cs->lines();
+  REQUIRE(lines2.size() == 1);
+  CHECK(lines2[0] == "not {} a {} format string\n");
+}
+
+TEST_CASE("logger getters report level, flush level, name and sinks") {
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  zest::logger lg("getters", cs);
+
+  CHECK(lg.name() == "getters");
+  CHECK(lg.level() == zest::level::trace);     // default
+  CHECK(lg.flush_level() == zest::level::off); // default: never auto-flush
+  CHECK(lg.should_log(zest::level::trace));
+  REQUIRE(lg.sinks().size() == 1);
+  CHECK(lg.sinks()[0] == cs);
+
+  lg.set_level(zest::level::warn);
+  lg.flush_on(zest::level::error);
+  CHECK(lg.level() == zest::level::warn);
+  CHECK(lg.flush_level() == zest::level::error);
+  CHECK_FALSE(lg.should_log(zest::level::info));
+  CHECK(lg.should_log(zest::level::error));
+}
