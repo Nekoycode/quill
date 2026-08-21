@@ -50,3 +50,18 @@ TEST_CASE("disable_backtrace stops capturing") {
   REQUIRE(lines.size() == 3);
   CHECK(lines[2] == "a\n");
 }
+
+TEST_CASE("dump_backtrace flushes the sinks after replay") {
+  auto fs = std::make_shared<zest::test::flush_counting_sink>();
+  zest::logger lg("bt4", fs);
+
+  lg.enable_backtrace(4);
+  lg.info("one");
+  lg.info("two");
+
+  const int before = fs->flushes();
+  lg.dump_backtrace();
+
+  // The replay must end with a flush so buffered sinks persist the dump.
+  CHECK(fs->flushes() == before + 1);
+}

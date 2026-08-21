@@ -178,10 +178,16 @@ public:
         msgs = backtrace_->snapshot();
       }
     }
+    // Intentionally write every buffered record regardless of each sink's
+    // level: a backtrace dump is crash context, not normal filtering.
     for (auto& m : msgs) {
       for (auto& s : sinks_) {
         s->write(m);
       }
+    }
+    // Flush so the dump actually reaches the sinks (file sinks buffer).
+    for (auto& s : sinks_) {
+      s->flush();
     }
   }
 

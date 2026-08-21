@@ -4,6 +4,10 @@ include(CMakeFindDependencyMacro)
 
 set(ZEST_USE_STD_FORMAT @_ZEST_USE_STD_FORMAT@)
 
+# The exported `zest` interface target links Threads::Threads (zest's headers
+# use std::thread & friends), so consumers must provide that target too.
+find_dependency(Threads)
+
 if(NOT ZEST_USE_STD_FORMAT)
   find_dependency(fmt)
 endif()

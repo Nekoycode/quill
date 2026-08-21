@@ -40,6 +40,11 @@ public:
 
 private:
   small_buffer& append_impl(const char* s, std::size_t n) {
+    // Empty append is a no-op: avoids memcpy(dst, nullptr, 0), which is UB
+    // (e.g. appending a default-constructed std::string_view).
+    if (n == 0) {
+      return *this;
+    }
     if (!heap_ && size_ + n <= N) {
       std::memcpy(inline_ + size_, s, n);
       size_ += n;

@@ -57,3 +57,13 @@ TEST_CASE("small_buffer append with explicit length across overflow") {
   const std::string out(b.view());
   CHECK(out == "xyzw0123456789");
 }
+
+TEST_CASE("small_buffer empty append is a no-op") {
+  zest::detail::small_buffer<16> b;
+  // A default-constructed string_view has data()==nullptr and size()==0;
+  // appending it must not invoke memcpy(dst, nullptr, 0) (UB).
+  b += std::string_view{};
+  b.append("", 0);
+  CHECK(b.size() == 0);
+  CHECK(b.view().empty());
+}

@@ -9,6 +9,11 @@ project(
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+# zest's headers use std::thread/std::jthread/std::mutex/std::condition_variable.
+# Modern glibc (>= 2.34) folds pthreads into libc, but older glibc, musl and
+# static linking still require -pthread for consumers of this header-only lib.
+find_package(Threads REQUIRED)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # CMake >= 4.0 removed compatibility with `cmake_minimum_required(VERSION < 3.5)`.
@@ -75,6 +80,7 @@ add_library(zest INTERFACE)
 add_library(zest::zest ALIAS zest)
 
 target_compile_features(zest INTERFACE cxx_std_20)
+target_link_libraries(zest INTERFACE Threads::Threads)
 target_include_directories(
   zest
   INTERFACE
