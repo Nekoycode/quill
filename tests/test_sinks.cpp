@@ -156,6 +156,22 @@ TEST_CASE("json_sink escapes quotes in the message") {
   CHECK(content.find("\\\"hi\\\"") != std::string::npos);
 }
 
+TEST_CASE("json_sink escapes control characters and backslashes") {
+  zest::test::temp_dir td;
+  const std::string path = td.file("ctrl.json");
+
+  {
+    auto lg = zest::create_logger("json", zest::json_sink(path));
+    lg->info("a\nb\tc\\d"); // newline, tab, backslash in the payload
+    lg->flush();
+  }
+
+  // The raw control chars must be escaped in the JSON string value: newline→\n,
+  // tab→\t, backslash→\\ (so the exact escaped text appears in the file).
+  const std::string content = zest::test::read_file(path);
+  CHECK(content.find("a\\nb\\tc\\\\d") != std::string::npos);
+}
+
 TEST_CASE("file sinks throw on fopen failure") {
   zest::test::temp_dir td;
   const std::string bad_path = td.file("missing_dir") + "/nope.log";
