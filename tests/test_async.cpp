@@ -1,8 +1,10 @@
 #include <doctest/doctest.h>
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -77,6 +79,66 @@ TEST_CASE("async logger with multiple backends delivers all messages") {
   CHECK(cs->count() == static_cast<std::size_t>(n_threads) * n_msgs);
 }
 
+TEST_CASE("async logger owns string arguments until the backend formats them") {
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  std::vector<std::shared_ptr<zest::sinks::sink>> sinks{cs};
+  auto lg = std::make_shared<zest::async_logger>("async-defer", std::move(sinks), 64);
+  lg->set_pattern("%v");
+
+  {
+    std::string s = "temporary string content";
+    lg->info("{}", s);
+  } // s is destroyed here, BEFORE the backend formats the record
+
+  lg->flush();
+  {
+    const auto lines = cs->lines();
+    REQUIRE(lines.size() == 1);
+    CHECK(lines[0] == "temporary string content\n");
+  }
+
+  // A string_view argument is captured by value (the view, cheaply copyable);
+  // log one whose referent stays alive until after the drain.
+  {
+    const std::string backing = "viewed content";
+    const std::string_view sv = backing;
+    lg->info("{}", sv);
+    lg->flush();
+  }
+  {
+    const auto lines = cs->lines();
+    REQUIRE(lines.size() == 2);
+    CHECK(lines[1] == "viewed content\n");
+  }
+}
+
+TEST_CASE("async logger backtrace captures deferred records and dumps the last n") {
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  std::vector<std::shared_ptr<zest::sinks::sink>> sinks{cs};
+  auto lg = std::make_shared<zest::async_logger>("async-bt", std::move(sinks), 64);
+  lg->set_pattern("%v");
+  lg->enable_backtrace(3);
+
+  for (int i = 0; i < 5; ++i) {
+    lg->info("b{}", i);
+  }
+  lg->flush();          // drain the async path (each record written once)
+  lg->dump_backtrace(); // re-emit the ring (last 3 records written again)
+
+  const auto lines = cs->lines();
+  REQUIRE(lines.size() == 8); // 5 async writes + 3 backtrace re-emits
+  const auto written = [&lines](const std::string& needle) {
+    return std::ranges::any_of(lines, [&](const std::string& l) { return l == needle; });
+  };
+  CHECK(written("b2\n"));
+  CHECK(written("b3\n"));
+  CHECK(written("b4\n"));
+  // The ring holds only the LAST 3: the re-emitted tail must be b2..b4 in order.
+  CHECK(lines[5] == "b2\n");
+  CHECK(lines[6] == "b3\n");
+  CHECK(lines[7] == "b4\n");
+}
+
 TEST_CASE("async overflow policy block delivers every record even with a tiny queue") {
   auto cs = std::make_shared<zest::test::capture_sink>();
   std::vector<std::shared_ptr<zest::sinks::sink>> sinks{cs};
@@ -109,6 +171,9 @@ TEST_CASE("async overflow policy drop_newest discards when the queue is full") {
   // cannot keep up, so many records are dropped.
   lg->flush();
   CHECK(cs->count() < static_cast<std::size_t>(n));
+  // drop_newest discards the INCOMING record, so the oldest records survive:
+  // "m0" entered the empty queue first and is never evicted.
+  CHECK(cs->contains("m0\n"));
 }
 
 TEST_CASE("async overflow policy drop_oldest keeps the newest records") {

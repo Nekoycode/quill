@@ -63,6 +63,65 @@ TEST_CASE("logger supports multiple arguments and runtime format strings") {
   CHECK(lines[1] == "runtime ok 7\n");
 }
 
+TEST_CASE("flush_on flushes the sinks once the record level reaches the threshold") {
+  auto fs = std::make_shared<zest::test::flush_counting_sink>();
+  zest::logger lg("flush-on", fs);
+  lg.set_level(zest::level::trace);
+  lg.flush_on(zest::level::error);
+
+  lg.info("below threshold");
+  CHECK(fs->flushes() == 0);
+  lg.warn("still below threshold");
+  CHECK(fs->flushes() == 0);
+  lg.error("at threshold");
+  CHECK(fs->flushes() == 1);
+  lg.critical("above threshold");
+  CHECK(fs->flushes() == 2);
+}
+
+TEST_CASE("logger never auto-flushes when flush_on was not set") {
+  auto fs = std::make_shared<zest::test::flush_counting_sink>();
+  zest::logger lg("no-flush-on", fs);
+
+  lg.critical("critical must not auto-flush by default");
+  CHECK(fs->flushes() == 0);
+
+  lg.flush(); // explicit flush still works
+  CHECK(fs->flushes() == 1);
+}
+
+TEST_CASE("ZEST_* macros log to the default logger with call-site source location") {
+  zest::drop_all();
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  auto dl = zest::create_logger("md", cs);
+  dl->set_pattern("%v [%s:%#]");
+  zest::set_default_logger(dl);
+
+  ZEST_INFO("hello {}", 42);
+  ZEST_WARN("x");
+
+  const auto lines = cs->lines();
+  REQUIRE(lines.size() == 2);
+  CHECK(lines[0].find("hello 42") != std::string::npos);
+  CHECK(lines[0].find("test_logger.cpp:") != std::string::npos);
+
+  zest::drop_all(); // reset so later tests get a fresh lazy default logger
+}
+
+TEST_CASE("ZEST_LOGGER_* macros log to an explicit logger and respect its level") {
+  auto cs = std::make_shared<zest::test::capture_sink>();
+  auto lg = std::make_shared<zest::logger>("macro-explicit", cs);
+  lg->set_pattern("%v");
+  lg->set_level(zest::level::warn);
+
+  ZEST_LOGGER_DEBUG(lg, "hidden");
+  ZEST_LOGGER_WARN(lg, "shown");
+
+  const auto lines = cs->lines();
+  REQUIRE(lines.size() == 1);
+  CHECK(lines[0] == "shown\n");
+}
+
 TEST_CASE("default-logger free functions forward to the default logger") {
   zest::drop_all();
   auto cs = std::make_shared<zest::test::capture_sink>();
